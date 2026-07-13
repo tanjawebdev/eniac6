@@ -1,0 +1,338 @@
+.debug-overlay {
+  position: absolute;
+  top: 40px;
+  right: 48px;
+  bottom: 40px;
+  width: 440px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.debug-header {
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-panel);
+  padding-bottom: 12px;
+}
+
+.debug-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.debug-sub {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.debug-section {
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border-panel);
+  padding-bottom: 16px;
+}
+
+.debug-section:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.debug-section h4 {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+
+.debug-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.debug-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.debug-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.debug-val {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.accent-text {
+  color: var(--active-color);
+  font-weight: 700;
+}
+
+.emulation-notice {
+  font-size: 9px;
+  color: var(--active-color);
+  opacity: 0.8;
+  margin-top: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+}
+
+/* Potentiometers */
+.pot-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pot-group-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pot-group-title {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.pot-group-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pot-bar-wrapper {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-panel);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.pot-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+
+.pot-bar-track-container {
+  position: relative;
+  height: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.pot-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+}
+
+.pot-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: grab;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+  transition: transform 0.1s var(--ease-out-expo);
+}
+
+.pot-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.2);
+}
+
+.pot-slider:disabled::-webkit-slider-thumb {
+  display: none;
+}
+
+/* Banana Grid */
+.banana-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.banana-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-panel);
+  border-radius: 6px;
+}
+
+.clickable {
+  cursor: pointer !important;
+  transition: transform 0.2s var(--ease-out-expo), background-color 0.2s var(--ease-out-expo), border-color 0.2s var(--ease-out-expo);
+}
+
+.clickable:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.clickable:active {
+  transform: scale(0.98);
+}
+
+.banana-label-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.banana-id {
+  font-weight: 500;
+}
+
+.banana-theme {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.banana-status {
+  font-size: 10px;
+  font-weight: 700;
+  color: #ff3333;
+}
+
+.banana-status.active {
+  color: #33ff33;
+  text-shadow: 0 0 8px rgba(51, 255, 51, 0.4);
+}
+
+/* NFC List */
+.nfc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nfc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-panel);
+  border-radius: 6px;
+}
+
+.nfc-reader-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.nfc-idx {
+  font-weight: 500;
+}
+
+.nfc-prog {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.nfc-data {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 10px;
+}
+
+.nfc-uid {
+  color: var(--text-muted);
+}
+
+/* Buttons and Contacts */
+.button-indicators {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-indicator {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  border: 1px solid var(--border-panel);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.btn-indicator.active {
+  background: var(--active-color);
+  color: #000;
+  border-color: var(--active-color);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.debug-sub-title {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.contact-indicator {
+  padding: 6px;
+  text-align: center;
+  border: 1px solid var(--border-panel);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.contact-indicator.active {
+  border-color: #33ff33;
+  color: #33ff33;
+  box-shadow: 0 0 8px rgba(51, 255, 51, 0.3);
+}
+
+.debug-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border-panel);
+  padding-top: 12px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-muted);
+}

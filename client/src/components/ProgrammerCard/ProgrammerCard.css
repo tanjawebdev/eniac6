@@ -1,0 +1,122 @@
+.programmer-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 20px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.4s var(--ease-out-expo), border-color 0.4s var(--ease-out-expo), box-shadow 0.4s var(--ease-out-expo);
+  min-height: 240px;
+  text-align: center;
+}
+
+.programmer-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+}
+
+.programmer-card.active {
+  border-color: var(--programmer-color);
+  box-shadow: 0 0 30px var(--programmer-glow);
+}
+
+/* Pulsing background card glow on active */
+.card-header-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, var(--programmer-glow) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.6s var(--ease-out-expo);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.programmer-card.active .card-header-glow,
+.programmer-card.nfc-in .card-header-glow {
+  opacity: 0.2;
+}
+
+/* Swatch container */
+.card-color-swatch-container {
+  position: relative;
+  margin-bottom: 24px;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-color-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+/* Pulse animation when card is inside the NFC reader slot */
+.card-nfc-pulse {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--programmer-color);
+  border-radius: 50%;
+  z-index: 1;
+  animation: cardPulse 2s infinite ease-out;
+}
+
+@keyframes cardPulse {
+  0% {
+    transform: scale(0.7);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Card Metadata */
+.card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 2;
+}
+
+.card-name {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+.programmer-card.active .card-name {
+  color: var(--programmer-color);
+}
+
+.card-role {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.card-nfc-label {
+  position: absolute;
+  bottom: 12px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--programmer-color);
+  text-shadow: 0 0 6px var(--programmer-glow);
+  z-index: 2;
+}

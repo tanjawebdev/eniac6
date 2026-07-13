@@ -1,0 +1,313 @@
+.debug-scene {
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 40px;
+}
+
+.debug-scene-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 30px;
+}
+
+.dbg-pre {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.dbg-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.dbg-exit-btn {
+  background: transparent;
+  border: 1px solid var(--border-panel);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: all 0.3s var(--ease-out-expo);
+}
+
+.dbg-exit-btn:hover {
+  background: var(--active-color);
+  color: #000;
+  border-color: var(--active-color);
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.debug-scene-content {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 30px;
+  flex: 1;
+  min-height: 0;
+}
+
+.dbg-card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dbg-card h3 {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-panel);
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.network-info {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.dbg-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.dbg-row span {
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+/* Pots Card */
+.pots-card {
+  height: 100%;
+}
+
+.dbg-pots-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.dbg-pot-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-panel);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.group-header {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  border-bottom: 1px dashed var(--border-panel);
+  padding-bottom: 6px;
+}
+
+.group-pots {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dbg-pot-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.item-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.item-fill {
+  height: 100%;
+  background: var(--active-color);
+  box-shadow: 0 0 8px var(--accent-glow);
+  border-radius: 2px;
+}
+
+/* Right Column details */
+.dbg-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.readers-card {
+  flex: 1.2;
+}
+
+.dbg-nfc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.dbg-nfc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-panel);
+  border-radius: 6px;
+}
+
+.nfc-port {
+  display: flex;
+  flex-direction: column;
+}
+
+.nfc-port span {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.nfc-port strong {
+  font-size: 13px;
+}
+
+.nfc-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 11px;
+}
+
+.nfc-in-tag {
+  font-weight: 700;
+}
+
+.nfc-uid-tag {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.plugs-card {
+  flex: 1.8;
+}
+
+.sub-header {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.banana-connectors {
+  margin-bottom: 24px;
+}
+
+.banana-indicators-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.banana-plug-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 6px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-panel);
+  border-radius: 6px;
+  text-align: center;
+  font-size: 10px;
+}
+
+.banana-plug-box.active {
+  border-color: #33ff33;
+  box-shadow: 0 0 10px rgba(51, 255, 51, 0.15);
+}
+
+.plug-id {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.plug-lbl {
+  font-weight: 700;
+  margin: 2px 0 6px 0;
+  text-transform: uppercase;
+  font-size: 9px;
+}
+
+.plug-status {
+  font-weight: 700;
+  color: #ff3333;
+}
+
+.banana-plug-box.active .plug-status {
+  color: #33ff33;
+}
+
+.sw-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.sw-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-panel);
+  border-radius: 6px;
+}
+
+.sw-box.active {
+  border-color: var(--active-color);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.sw-box span {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.sw-box strong {
+  font-size: 13px;
+}
+
+.sw-box.active strong {
+  color: var(--active-color);
+}

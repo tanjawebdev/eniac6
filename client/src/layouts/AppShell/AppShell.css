@@ -1,0 +1,40 @@
+.app-shell-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #000;
+  overflow: hidden;
+}
+
+.app-shell {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+/* Scaled dev mode settings */
+.scaled-mode .app-shell {
+  border: 4px solid var(--border-panel);
+  box-shadow: 0 0 100px rgba(0, 0, 0, 0.9);
+  transform-origin: center center;
+}
+
+.scale-indicator {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid var(--border-panel);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  pointer-events: none;
+  z-index: 999;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
