@@ -5,6 +5,7 @@ import { SceneManager } from '../../components/SceneManager/SceneManager';
 import { GlobalOverlay } from '../../components/GlobalOverlay/GlobalOverlay';
 import { Hud } from '../../components/Hud/Hud';
 import { DebugOverlay } from '../../components/DebugOverlay/DebugOverlay';
+import { ProgrammerCardsOverlay } from '../../components/ProgrammerCardsOverlay/ProgrammerCardsOverlay';
 import './AppShell.css';
 
 export function AppShell() {
@@ -66,6 +67,9 @@ export function AppShell() {
 
         {/* Dynamic Scene Loader */}
         <SceneManager />
+
+        {/* Persistent Programmer Cards overlay */}
+        <ProgrammerCardsOverlay />
 
         {/* Scanlines & Vignette CRT Filter */}
         <GlobalOverlay />

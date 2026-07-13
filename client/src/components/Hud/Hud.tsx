@@ -69,8 +69,8 @@ export function Hud() {
 
   const centerText = getCenterText();
 
-  // Hide HUD in intro and debug scenes for a cleaner cinematic experience
-  if (currentScene === 'intro' || currentScene === 'debug' || currentScene === 'reset') {
+  // Hide HUD in intro, home, debug and reset scenes for a cleaner experience
+  if (currentScene === 'intro' || currentScene === 'home' || currentScene === 'debug' || currentScene === 'reset') {
     return null;
   }
 

@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
 import { useAppStore, DEFAULT_ACTIVE_COLOR } from '../../stores/appStore';
 import { useHardwareStore } from '../../stores/hardwareStore';
-import { PROGRAMMER_LIST, type ProgrammerData } from '../../data/programmers';
-import { ProgrammerCard } from '../../components/ProgrammerCard/ProgrammerCard';
 import { THEME_IDS } from '@shared/constants';
 import './HomeScene.css';
 
@@ -52,38 +50,63 @@ export function HomeScene() {
     }
   }, [bananas, selectTheme, goToScene]);
 
-  const handleCardClick = (programmer: ProgrammerData) => {
-    selectProgrammer(programmer.key);
-    setActiveColor(programmer.color);
-  };
+  // Helper positions matching the mockup grid & column indexes
+  const SLIDER_POSITIONS = [12, 54, 10, 20, 48.5, 73, 40, 27, 58, 73, 15, 33];
+
+  // Calculate dynamic header inserted count
+  const insertedCount = nfcStates.filter(n => n.present && n.uid).length;
 
   return (
-    <div className="home-scene container-full">
-      <header className="home-header">
-        <span className="home-pre">installation hub</span>
-        <h2 className="home-title">ENIAC PROGRAMMERS</h2>
-      </header>
+    <div className="home-scene">
+      {/* Top Center: Inserted programmers count */}
+      <div className="home-header-text">
+        {insertedCount}/6 programmers inserted
+      </div>
 
-      <div className="home-layout">
-        {/* Left Column: Grid of 6 Programmer Cards */}
-        <div className="programmers-section">
-          <div className="programmer-grid">
-            {PROGRAMMER_LIST.map((prog) => {
-              const isActive = selectedProgrammerKey === prog.key;
-              // Check if this programmer's card is present in ANY of the slots
-              const isNfcIn = nfcStates.some((n) => n.present && n.uid === prog.uid);
-              return (
-                <ProgrammerCard
-                  key={prog.key}
-                  programmer={prog}
-                  isActive={isActive}
-                  isNfcPresent={isNfcIn}
-                  onClick={() => handleCardClick(prog)}
-                />
-              );
-            })}
-          </div>
-        </div>
+      {/* Right-aligned vertically rotated label */}
+      <div className="home-vertical-text">
+        world&apos;s first electronic computer programmers
+      </div>
+
+      {/* Background track columns */}
+      <div className="home-bg-columns">
+        {Array.from({ length: 12 }).map((_, colIdx) => {
+          const digit = Math.floor((11 - colIdx) / 2) + 1; // 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1
+          const repeatingDigits = digit.toString().repeat(90);
+          
+          return (
+            <div 
+              key={colIdx} 
+              className="bg-column"
+              style={{ left: `${100 + colIdx * 150}px` }}
+            >
+              <span className="bg-digits">{repeatingDigits}</span>
+              <div 
+                className="bg-slider-handle" 
+                style={{ top: `${SLIDER_POSITIONS[colIdx]}%` }}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Big typography overlay */}
+      <div className="home-headlines">
+        <h1 className="home-h1">
+          THE
+          <br />
+          ENIAC 6
+        </h1>
+        <h2 className="home-h2">
+          BEHIND THE
+          <br />
+          MACHINE
+        </h2>
+      </div>
+
+      {/* Bottom Center: ENIAC details */}
+      <div className="home-footer-text">
+        eniac - completed 1945
       </div>
     </div>
   );

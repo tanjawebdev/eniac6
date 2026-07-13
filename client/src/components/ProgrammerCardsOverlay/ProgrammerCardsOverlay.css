@@ -1,0 +1,42 @@
+.programmer-cards-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.overlay-programmer-card {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 250px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.45);
+  background: rgba(12, 12, 12, 0.7);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 0.5s var(--ease-out-expo);
+}
+
+.overlay-programmer-card.inserted {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: rgba(12, 12, 12, 0.95);
+  box-shadow: 0 0 35px var(--accent-glow);
+}
+
+.overlay-programmer-card span {
+  font-family: var(--font-display);
+  font-size: 65px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: inherit;
+  transition: color 0.5s var(--ease-out-expo);
+}
