@@ -55,15 +55,23 @@ export function DebugOverlay() {
         const mappingKey = `${themeId}-socket${socketIndex}`;
         const activeProg = hardware.banana[themeId]?.[socketKey];
 
-        if (activeProg && nextMappings[mappingKey] === undefined) {
-          // Find which NFC reader has this programmer card
-          const idx = hardware.nfc.findIndex((reader) => {
-            if (!reader.present) return false;
-            const k = UID_TO_PROGRAMMER[reader.uid];
-            return k === activeProg;
-          });
-          if (idx !== -1) {
-            nextMappings[mappingKey] = idx;
+        if (activeProg) {
+          if (nextMappings[mappingKey] === undefined || nextMappings[mappingKey] === null) {
+            // Find which NFC reader has this programmer card
+            const idx = hardware.nfc.findIndex((reader) => {
+              if (!reader.present) return false;
+              const k = UID_TO_PROGRAMMER[reader.uid];
+              return k === activeProg;
+            });
+            if (idx !== -1) {
+              nextMappings[mappingKey] = idx;
+              changed = true;
+            }
+          }
+        } else {
+          // If no active programmer is connected to this socket, it should be open
+          if (nextMappings[mappingKey] !== undefined && nextMappings[mappingKey] !== null) {
+            nextMappings[mappingKey] = null;
             changed = true;
           }
         }

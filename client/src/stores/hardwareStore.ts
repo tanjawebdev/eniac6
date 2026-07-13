@@ -6,6 +6,7 @@ import { THEME_IDS } from '@shared/constants';
 
 import { PROGRAMMERS } from '../data/programmers';
 import { useAppStore } from './appStore';
+import { WebSocketService } from '../services/WebSocketService';
 
 interface HardwareStoreState extends HardwareState {
   updateFromEvent: (event: HardwareEvent) => void;
@@ -44,13 +45,15 @@ export const useHardwareStore = create<HardwareStoreState>((set) => ({
             if (prog) {
               appState.setThemeColor(event.theme, prog.color);
 
-              // If this is the active theme, or if we are in home scene (about to transition to this theme),
-              // update the selected programmer to the one just plugged in.
+              // Switch active view and programmer to the newest banana connection
+              appState.selectTheme(event.theme);
+              appState.selectProgrammer(event.programmer);
+              appState.setActiveColor(prog.color);
+
+              // If not already in the theme scene, transition to it (unless in debug mode)
               const currentScene = appState.currentScene;
-              const selectedTheme = appState.selectedTheme;
-              if (currentScene === 'home' || selectedTheme === event.theme) {
-                appState.selectProgrammer(event.programmer);
-                appState.setActiveColor(prog.color);
+              if (currentScene === 'home' || currentScene === 'intro') {
+                appState.goToScene('theme');
               }
             }
           } else {
@@ -90,11 +93,57 @@ export const useHardwareStore = create<HardwareStoreState>((set) => ({
           return { contacts: nextContacts };
         }
         case 'button': {
+          const nextButtons = {
+            ...state.buttons,
+            [event.name]: event.pressed,
+          };
+
+          if ((event.name === 'home' || event.name === 'intro') && event.pressed) {
+            const appState = useAppStore.getState();
+            if (event.name === 'home') {
+              appState.goHome();
+            } else {
+              appState.showIntro();
+            }
+            appState.selectProgrammer(null);
+            appState.setActiveColor('#c89b3c');
+            THEME_IDS.forEach((tId) => {
+              appState.setThemeColor(tId, '#333333');
+            });
+
+            const nextBanana = { ...state.banana };
+            THEME_IDS.forEach((tId) => {
+              nextBanana[tId] = { socket0: null, socket1: null };
+            });
+
+            if (appState.mockMode) {
+              const wsService = WebSocketService.getInstance();
+              THEME_IDS.forEach((tId) => {
+                wsService.sendEvent({
+                  type: 'banana',
+                  theme: tId,
+                  socket: 0,
+                  connected: false,
+                  programmer: null,
+                });
+                wsService.sendEvent({
+                  type: 'banana',
+                  theme: tId,
+                  socket: 1,
+                  connected: false,
+                  programmer: null,
+                });
+              });
+            }
+
+            return {
+              buttons: nextButtons,
+              banana: nextBanana,
+            };
+          }
+
           return {
-            buttons: {
-              ...state.buttons,
-              [event.name]: event.pressed,
-            },
+            buttons: nextButtons,
           };
         }
         case 'nfc': {
