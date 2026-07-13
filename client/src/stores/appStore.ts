@@ -31,7 +31,7 @@ interface AppStoreState {
   setMockMode: (mock: boolean) => void;
 }
 
-const DEFAULT_ACTIVE_COLOR = '#c89b3c'; // Warm amber/gold from prototype config
+export const DEFAULT_ACTIVE_COLOR = '#ffffff';
 
 export const useAppStore = create<AppStoreState>((set) => ({
   currentScene: 'intro',

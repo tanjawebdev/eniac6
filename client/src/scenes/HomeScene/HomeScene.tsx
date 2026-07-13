@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useAppStore } from '../../stores/appStore';
+import { useAppStore, DEFAULT_ACTIVE_COLOR } from '../../stores/appStore';
 import { useHardwareStore } from '../../stores/hardwareStore';
 import { PROGRAMMER_LIST, type ProgrammerData } from '../../data/programmers';
 import { ProgrammerCard } from '../../components/ProgrammerCard/ProgrammerCard';
@@ -29,7 +29,7 @@ export function HomeScene() {
     if (!hasActiveBanana) {
       if (selectedProgrammerKey !== null) {
         selectProgrammer(null);
-        setActiveColor('#c89b3c'); // Default warm gold
+        setActiveColor(DEFAULT_ACTIVE_COLOR);
       }
     }
   }, [bananas, selectedProgrammerKey, selectProgrammer, setActiveColor]);

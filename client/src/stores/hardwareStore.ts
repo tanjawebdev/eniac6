@@ -5,7 +5,7 @@ import { createDefaultHardwareState } from '@shared/hardware';
 import { THEME_IDS } from '@shared/constants';
 
 import { PROGRAMMERS } from '../data/programmers';
-import { useAppStore } from './appStore';
+import { useAppStore, DEFAULT_ACTIVE_COLOR } from './appStore';
 import { WebSocketService } from '../services/WebSocketService';
 
 interface HardwareStoreState extends HardwareState {
@@ -67,7 +67,7 @@ export const useHardwareStore = create<HardwareStoreState>((set) => ({
               });
               if (allEmpty) {
                 appState.selectProgrammer(null);
-                appState.setActiveColor('#c89b3c');
+                appState.setActiveColor(DEFAULT_ACTIVE_COLOR);
               }
             } else {
               // One socket was disconnected, but the other is still plugged in.
@@ -106,7 +106,7 @@ export const useHardwareStore = create<HardwareStoreState>((set) => ({
               appState.showIntro();
             }
             appState.selectProgrammer(null);
-            appState.setActiveColor('#c89b3c');
+            appState.setActiveColor(DEFAULT_ACTIVE_COLOR);
             THEME_IDS.forEach((tId) => {
               appState.setThemeColor(tId, '#333333');
             });

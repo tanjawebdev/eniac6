@@ -16,9 +16,9 @@
   --text-muted: rgba(255, 255, 255, 0.3);
   
   /* Accent Colors */
-  --accent: #c89b3c; /* Default warm amber/gold */
-  --accent-glow: rgba(200, 155, 60, 0.25);
-  --active-color: #c89b3c; /* Dynamically overwritten via JS */
+  --accent: #ffffff;
+  --accent-glow: rgba(255, 255, 255, 0.15);
+  --active-color: #ffffff; /* Dynamically overwritten via JS */
 
   /* Typography */
   --font-mono: 'IBM Plex Mono', monospace;
