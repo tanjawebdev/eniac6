@@ -60,9 +60,9 @@ export function Hud() {
     }
     return (
       <>
-        SELECT
+        THE
         <br />
-        CARD
+        ENIAC 6
       </>
     );
   };

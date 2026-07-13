@@ -14,6 +14,13 @@ export function CanvasBackground() {
   const selectedTheme = useAppStore((state) => state.selectedTheme);
   const currentScene = useAppStore((state) => state.currentScene);
   const pots = useHardwareStore((state) => state.pots);
+  const nfc = useHardwareStore((state) => state.nfc);
+
+  // Check if all NFC readers are occupied (only active in home or intro scenes)
+  const allInserted =
+    (currentScene === 'home' || currentScene === 'intro') &&
+    nfc.length === 6 &&
+    nfc.every((n) => n.present && n.uid);
 
   // Choose which shape to draw based on current scene or selected theme
   // Default is circle. Programming could draw squares, recognition triangles, etc.
@@ -22,7 +29,7 @@ export function CanvasBackground() {
       if (currentScene === 'intro') return 'circle';
       return 'circle';
     }
-    
+
     switch (selectedTheme) {
       case 'pioneering':
         return 'circle';
@@ -101,7 +108,8 @@ export function CanvasBackground() {
     engine.setConfig('size', params.size);
     engine.setConfig('amount', params.amount);
     engine.setConfig('rotate', params.rotate);
-  }, [activeColor, activeShape, params.speed, params.size, params.amount, params.rotate]);
+    engine.setConfig('allInserted', allInserted);
+  }, [activeColor, activeShape, params.speed, params.size, params.amount, params.rotate, allInserted]);
 
   return <canvas ref={canvasRef} className="canvas-background" />;
 }

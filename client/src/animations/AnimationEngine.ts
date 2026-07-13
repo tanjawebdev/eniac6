@@ -7,6 +7,7 @@ export interface EngineConfig {
   size: number;
   amount: number;
   rotate: number;
+  allInserted: boolean;
 }
 
 export class AnimationEngine {
@@ -18,6 +19,15 @@ export class AnimationEngine {
   private width = 0;
   private height = 0;
 
+  private blobs: Array<{
+    rx: number;
+    ry: number;
+    color: string;
+    speedX: number;
+    speedY: number;
+    angle: number;
+  }> = [];
+
   public config: EngineConfig = {
     color: null,
     shape: null,
@@ -25,6 +35,7 @@ export class AnimationEngine {
     size: 5,
     amount: 12,
     rotate: 0,
+    allInserted: false,
   };
 
   constructor(canvas: HTMLCanvasElement) {
@@ -79,16 +90,96 @@ export class AnimationEngine {
     }
   }
 
+  private initBlobs(): void {
+    this.blobs = [
+      {
+        rx: 0.5,
+        ry: 0.6,
+        color: 'rgba(230, 92, 0, 0.65)', // Fiery Orange
+        speedX: 0.00015,
+        speedY: 0.0001,
+        angle: Math.random() * Math.PI * 2,
+      },
+      {
+        rx: 0.6,
+        ry: 0.7,
+        color: 'rgba(100, 30, 180, 0.75)', // Deep Purple
+        speedX: -0.0001,
+        speedY: 0.00012,
+        angle: Math.random() * Math.PI * 2,
+      },
+      {
+        rx: 0.55,
+        ry: 0.5,
+        color: 'rgba(180, 15, 60, 0.55)', // Crimson Red
+        speedX: 0.00012,
+        speedY: -0.00013,
+        angle: Math.random() * Math.PI * 2,
+      },
+      {
+        rx: 0.45,
+        ry: 0.55,
+        color: 'rgba(30, 10, 60, 0.85)', // Dark Blue/Violet
+        speedX: -0.00013,
+        speedY: -0.00011,
+        angle: Math.random() * Math.PI * 2,
+      },
+    ];
+  }
+
   private animate = (timestamp?: number): void => {
     this.animationId = requestAnimationFrame(this.animate);
 
     const time = (timestamp || performance.now()) - this.startTime;
     const { ctx, width, height, config, particles } = this;
 
-    // USER FEEDBACK: "no ghosting effect please" -> clear canvas fully
     ctx.clearRect(0, 0, width, height);
 
-    // Fill background color
+    if (config.allInserted) {
+      if (this.blobs.length === 0) {
+        this.initBlobs();
+      }
+
+      // Draw background base color
+      ctx.fillStyle = '#06010a';
+      ctx.fillRect(0, 0, width, height);
+
+      // Save context to apply heavy blur
+      ctx.save();
+      ctx.filter = 'blur(120px)';
+      ctx.globalCompositeOperation = 'screen';
+
+      const timeVal = timestamp || performance.now();
+
+      for (const blob of this.blobs) {
+        // Update positions using smooth sine waves to drift around
+        const dx = Math.sin(timeVal * blob.speedX + blob.angle) * (width * 0.3);
+        const dy = Math.cos(timeVal * blob.speedY + blob.angle) * (height * 0.3);
+        const blobX = (width / 2) + dx;
+        const blobY = (height / 2) + dy;
+        const radX = width * blob.rx;
+        const radY = height * blob.ry;
+        const maxRad = Math.max(radX, radY);
+
+        // Draw blob as a radial gradient
+        const grad = ctx.createRadialGradient(
+          blobX, blobY, 0,
+          blobX, blobY, maxRad
+        );
+        grad.addColorStop(0, blob.color);
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(blobX, blobY, maxRad, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+      return;
+    }
+
+    // Default: Fill background color & draw particles
     ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(0, 0, width, height);
 
