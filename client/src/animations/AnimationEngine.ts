@@ -8,6 +8,7 @@ export interface EngineConfig {
   amount: number;
   rotate: number;
   allInserted: boolean;
+  backgroundColor: string;
 }
 
 export class AnimationEngine {
@@ -36,6 +37,7 @@ export class AnimationEngine {
     amount: 12,
     rotate: 0,
     allInserted: false,
+    backgroundColor: '#0a0a0a',
   };
 
   constructor(canvas: HTMLCanvasElement) {
@@ -180,7 +182,7 @@ export class AnimationEngine {
     }
 
     // Default: Fill background color & draw particles
-    ctx.fillStyle = '#0a0a0a';
+    ctx.fillStyle = config.backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
     // Don't render shapes if no color or shape is selected

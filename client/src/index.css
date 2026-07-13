@@ -14,11 +14,12 @@
   --text-primary: #f5f5f5;
   --text-secondary: rgba(255, 255, 255, 0.6);
   --text-muted: rgba(255, 255, 255, 0.3);
-  
+
   /* Accent Colors */
   --accent: #ffffff;
   --accent-glow: rgba(255, 255, 255, 0.15);
-  --active-color: #ffffff; /* Dynamically overwritten via JS */
+  --active-color: #ffffff;
+  /* Dynamically overwritten via JS */
 
   /* Typography */
   --font-mono: 'IBM Plex Mono', monospace;
@@ -51,7 +52,12 @@ body,
 }
 
 /* --- Typography Defaults --- */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.01em;

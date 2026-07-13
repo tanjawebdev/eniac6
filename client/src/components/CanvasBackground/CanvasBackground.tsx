@@ -22,6 +22,8 @@ export function CanvasBackground() {
     nfc.length === 6 &&
     nfc.every((n) => n.present && n.uid);
 
+  const backgroundColor = currentScene === 'home' && !allInserted ? '#191815' : '#0a0a0a';
+
   // Choose which shape to draw based on current scene or selected theme
   // Default is circle. Programming could draw squares, recognition triangles, etc.
   const getActiveShape = () => {
@@ -110,7 +112,8 @@ export function CanvasBackground() {
     engine.setConfig('amount', params.amount);
     engine.setConfig('rotate', params.rotate);
     engine.setConfig('allInserted', allInserted);
-  }, [activeColor, activeShape, params.speed, params.size, params.amount, params.rotate, allInserted]);
+    engine.setConfig('backgroundColor', backgroundColor);
+  }, [activeColor, activeShape, params.speed, params.size, params.amount, params.rotate, allInserted, backgroundColor]);
 
   return <canvas ref={canvasRef} className="canvas-background" />;
 }
