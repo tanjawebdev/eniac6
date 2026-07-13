@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useHardwareStore } from '../../stores/hardwareStore';
 import { useAppStore } from '../../stores/appStore';
 import { useDebug } from '../../hooks/useScene';
@@ -14,6 +15,95 @@ export function DebugOverlay() {
 
   const wsService = WebSocketService.getInstance();
 
+  // Track which slot (0-5) is selected for each theme and socket: e.g. "pioneering-socket0" -> slot index (0-5)
+  const [socketMappings, setSocketMappings] = useState<Record<string, number | null>>(() => {
+    const initial: Record<string, number | null> = {};
+    const currentHardware = useHardwareStore.getState();
+    
+    THEME_IDS.forEach((themeId) => {
+      const tState = currentHardware.banana[themeId];
+      if (tState) {
+        const findSlot = (progKey: ProgrammerKey | null) => {
+          if (!progKey) return null;
+          const idx = currentHardware.nfc.findIndex((reader) => {
+            if (!reader.present) return false;
+            const k = UID_TO_PROGRAMMER[reader.uid];
+            return k === progKey;
+          });
+          return idx !== -1 ? idx : null;
+        };
+        
+        const slot0 = findSlot(tState.socket0);
+        if (slot0 !== null) initial[`${themeId}-socket0`] = slot0;
+        
+        const slot1 = findSlot(tState.socket1);
+        if (slot1 !== null) initial[`${themeId}-socket1`] = slot1;
+      }
+    });
+    
+    return initial;
+  });
+
+  // Sync socket mappings if the state was loaded asynchronously (e.g. from backend on connection)
+  useEffect(() => {
+    const nextMappings = { ...socketMappings };
+    let changed = false;
+
+    THEME_IDS.forEach((themeId) => {
+      [0, 1].forEach((socketIndex) => {
+        const socketKey = socketIndex === 0 ? 'socket0' : 'socket1';
+        const mappingKey = `${themeId}-socket${socketIndex}`;
+        const activeProg = hardware.banana[themeId]?.[socketKey];
+
+        if (activeProg && nextMappings[mappingKey] === undefined) {
+          // Find which NFC reader has this programmer card
+          const idx = hardware.nfc.findIndex((reader) => {
+            if (!reader.present) return false;
+            const k = UID_TO_PROGRAMMER[reader.uid];
+            return k === activeProg;
+          });
+          if (idx !== -1) {
+            nextMappings[mappingKey] = idx;
+            changed = true;
+          }
+        }
+      });
+    });
+
+    if (changed) {
+      setSocketMappings(nextMappings);
+    }
+  }, [hardware.banana, hardware.nfc, socketMappings]);
+
+  // Keep banana plug connections in sync with NFC card insertion/removal changes
+  useEffect(() => {
+    if (!mockMode) return;
+    
+    THEME_IDS.forEach((themeId) => {
+      [0, 1].forEach((socketIndex) => {
+        const socketKey = socketIndex === 0 ? 'socket0' : 'socket1';
+        const mappingKey = `${themeId}-socket${socketIndex}`;
+        const mappedSlot = socketMappings[mappingKey];
+        
+        if (mappedSlot !== undefined && mappedSlot !== null) {
+          const reader = hardware.nfc[mappedSlot];
+          const currentProgrammerKey = reader?.present ? UID_TO_PROGRAMMER[reader.uid] : null;
+          const activeBananaProgKey = hardware.banana[themeId]?.[socketKey];
+          
+          if (currentProgrammerKey !== activeBananaProgKey) {
+            wsService.sendEvent({
+              type: 'banana',
+              theme: themeId,
+              socket: socketIndex as 0 | 1,
+              connected: currentProgrammerKey !== null,
+              programmer: currentProgrammerKey,
+            });
+          }
+        }
+      });
+    });
+  }, [hardware.nfc, socketMappings, mockMode]);
+
   // --- Hardware Emulation Event Dispatchers ---
 
   const handlePotChange = (id: number, value: number) => {
@@ -21,9 +111,12 @@ export function DebugOverlay() {
     wsService.sendEvent({ type: 'pot', id, value });
   };
 
-  const handleBananaChange = (themeId: ThemeId, socket: 0 | 1, programmerKey: string) => {
+  const handleBananaSlotChange = (themeId: ThemeId, socket: 0 | 1, valueStr: string) => {
     if (!mockMode) return;
-    if (programmerKey === '') {
+    const mappingKey = `${themeId}-socket${socket}`;
+    
+    if (valueStr === '') {
+      setSocketMappings((prev) => ({ ...prev, [mappingKey]: null }));
       wsService.sendEvent({
         type: 'banana',
         theme: themeId,
@@ -32,12 +125,18 @@ export function DebugOverlay() {
         programmer: null,
       });
     } else {
+      const slotIndex = parseInt(valueStr, 10);
+      setSocketMappings((prev) => ({ ...prev, [mappingKey]: slotIndex }));
+      
+      const reader = hardware.nfc[slotIndex];
+      const programmerKey = reader.present ? UID_TO_PROGRAMMER[reader.uid] : null;
+      
       wsService.sendEvent({
         type: 'banana',
         theme: themeId,
         socket,
-        connected: true,
-        programmer: programmerKey as ProgrammerKey,
+        connected: programmerKey !== null,
+        programmer: programmerKey,
       });
     }
   };
@@ -169,16 +268,20 @@ export function DebugOverlay() {
                     {mockMode ? (
                       <select
                         className="banana-dropdown font-monospace"
-                        value={tState.socket0 || ''}
-                        onChange={(e) => handleBananaChange(themeId, 0, e.target.value)}
+                        value={socketMappings[`${themeId}-socket0`] ?? ''}
+                        onChange={(e) => handleBananaSlotChange(themeId, 0, e.target.value)}
                       >
                         <option value="">[ Open ]</option>
-                        <option value="mcnulty">Kay McNulty</option>
-                        <option value="jennings">Jean Jennings</option>
-                        <option value="snyder">Betty Snyder</option>
-                        <option value="wescoff">Marlyn Wescoff</option>
-                        <option value="bilas">Fran Bilas</option>
-                        <option value="lichterman">Ruth Lichterman</option>
+                        {Array.from({ length: 6 }).map((_, idx) => {
+                          const reader = hardware.nfc[idx];
+                          const programmerKey = reader.present ? UID_TO_PROGRAMMER[reader.uid] : null;
+                          const programmerName = programmerKey ? PROGRAMMERS[programmerKey].firstName : 'Empty';
+                          return (
+                            <option key={idx} value={idx}>
+                              Slot {idx} ({programmerName})
+                            </option>
+                          );
+                        })}
                       </select>
                     ) : (
                       <span className="banana-jack-val">
@@ -192,16 +295,20 @@ export function DebugOverlay() {
                     {mockMode ? (
                       <select
                         className="banana-dropdown font-monospace"
-                        value={tState.socket1 || ''}
-                        onChange={(e) => handleBananaChange(themeId, 1, e.target.value)}
+                        value={socketMappings[`${themeId}-socket1`] ?? ''}
+                        onChange={(e) => handleBananaSlotChange(themeId, 1, e.target.value)}
                       >
                         <option value="">[ Open ]</option>
-                        <option value="mcnulty">Kay McNulty</option>
-                        <option value="jennings">Jean Jennings</option>
-                        <option value="snyder">Betty Snyder</option>
-                        <option value="wescoff">Marlyn Wescoff</option>
-                        <option value="bilas">Fran Bilas</option>
-                        <option value="lichterman">Ruth Lichterman</option>
+                        {Array.from({ length: 6 }).map((_, idx) => {
+                          const reader = hardware.nfc[idx];
+                          const programmerKey = reader.present ? UID_TO_PROGRAMMER[reader.uid] : null;
+                          const programmerName = programmerKey ? PROGRAMMERS[programmerKey].firstName : 'Empty';
+                          return (
+                            <option key={idx} value={idx}>
+                              Slot {idx} ({programmerName})
+                            </option>
+                          );
+                        })}
                       </select>
                     ) : (
                       <span className="banana-jack-val">

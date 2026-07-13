@@ -38,7 +38,7 @@ export default function App() {
   useEffect(() => {
     // Only trigger in home scene
     if (currentScene !== 'home') return;
-    
+
     // Find if any contact sensor is activated
     const activeContactIndex = contacts.findIndex((active) => active);
     if (activeContactIndex !== -1) {
@@ -65,6 +65,10 @@ export default function App() {
       // Toggle Dev scale fit mode with 'S' / 's'
       if (e.key === 's' || e.key === 'S') {
         toggleDevScale();
+      }
+      // Toggle Dev mode (mock vs serial) with 'X' / 'x'
+      if (e.key === 'x' || e.key === 'X') {
+        goToScene('debug');
       }
       // Reset installation back to intro with 'R' / 'r'
       if (e.key === 'r' || e.key === 'R') {

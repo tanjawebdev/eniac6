@@ -3,6 +3,7 @@ import { useAppStore } from '../../stores/appStore';
 import { useHardwareStore } from '../../stores/hardwareStore';
 import { useSelectedProgrammer } from '../../hooks/useScene';
 import { THEME_POT_MAPPING } from '@shared/constants';
+import { PROGRAMMERS } from '../../data/programmers';
 import './ThemeScene.css';
 
 export function ThemeScene() {
@@ -25,6 +26,29 @@ export function ThemeScene() {
       }
     }
   }, [bananas, selectedTheme, goHome]);
+
+  // Synchronize the selected programmer with the banana plugs connected to this theme
+  useEffect(() => {
+    if (selectedTheme) {
+      const tState = bananas[selectedTheme];
+      if (tState) {
+        const activeProgKey = tState.socket0 || tState.socket1;
+        if (activeProgKey) {
+          const selectProgrammer = useAppStore.getState().selectProgrammer;
+          const setActiveColor = useAppStore.getState().setActiveColor;
+          const currentProgKey = useAppStore.getState().selectedProgrammer;
+          
+          if (currentProgKey !== activeProgKey) {
+            selectProgrammer(activeProgKey);
+            const prog = PROGRAMMERS[activeProgKey];
+            if (prog) {
+              setActiveColor(prog.color);
+            }
+          }
+        }
+      }
+    }
+  }, [bananas, selectedTheme]);
 
   // Read the 4 pots mapping to this theme
   const getPotValues = () => {

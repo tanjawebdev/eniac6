@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { HardwareState } from '@shared/hardware';
 import type { HardwareEvent } from '@shared/events';
 import { createDefaultHardwareState } from '@shared/hardware';
+import { THEME_IDS } from '@shared/constants';
 
 import { PROGRAMMERS } from '../data/programmers';
 import { useAppStore } from './appStore';
@@ -34,16 +35,48 @@ export const useHardwareStore = create<HardwareStoreState>((set) => ({
             [key]: event.connected ? event.programmer : null,
           };
 
+          const appState = useAppStore.getState();
+          const tState = nextBanana[event.theme];
+
           // Update theme color dynamically based on plugged woman
           if (event.connected && event.programmer) {
             const prog = PROGRAMMERS[event.programmer];
             if (prog) {
-              useAppStore.getState().setThemeColor(event.theme, prog.color);
+              appState.setThemeColor(event.theme, prog.color);
+
+              // If this is the active theme, or if we are in home scene (about to transition to this theme),
+              // update the selected programmer to the one just plugged in.
+              const currentScene = appState.currentScene;
+              const selectedTheme = appState.selectedTheme;
+              if (currentScene === 'home' || selectedTheme === event.theme) {
+                appState.selectProgrammer(event.programmer);
+                appState.setActiveColor(prog.color);
+              }
             }
           } else {
-            const tState = nextBanana[event.theme];
             if (tState.socket0 === null && tState.socket1 === null) {
-              useAppStore.getState().setThemeColor(event.theme, '#333333');
+              appState.setThemeColor(event.theme, '#333333');
+
+              // Check if all themes are now empty
+              const allEmpty = THEME_IDS.every((tId) => {
+                const bananaThemeState = nextBanana[tId];
+                return !bananaThemeState || (bananaThemeState.socket0 === null && bananaThemeState.socket1 === null);
+              });
+              if (allEmpty) {
+                appState.selectProgrammer(null);
+                appState.setActiveColor('#c89b3c');
+              }
+            } else {
+              // One socket was disconnected, but the other is still plugged in.
+              // Select the programmer in the remaining socket if it's the active theme.
+              const remainingProgKey = tState.socket0 || tState.socket1;
+              if (remainingProgKey && appState.selectedTheme === event.theme) {
+                const prog = PROGRAMMERS[remainingProgKey];
+                if (prog) {
+                  appState.selectProgrammer(remainingProgKey);
+                  appState.setActiveColor(prog.color);
+                }
+              }
             }
           }
 
