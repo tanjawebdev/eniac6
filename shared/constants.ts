@@ -39,14 +39,27 @@ export const PROGRAMMER_KEYS = [
 ] as const;
 export type ProgrammerKey = (typeof PROGRAMMER_KEYS)[number];
 
-/** Each NFC reader maps to a programmer by index. */
-export const NFC_PROGRAMMER_MAPPING: Record<number, ProgrammerKey> = {
-  0: 'mcnulty',
-  1: 'jennings',
-  2: 'snyder',
-  3: 'wescoff',
-  4: 'bilas',
-  5: 'lichterman',
+// --- Programmer NFC UIDs ---
+// Each card represents a programmer and has a unique, static UID.
+export const PROGRAMMER_UIDS = {
+  mcnulty: '04A17C00', // Kay McNulty
+  jennings: '04A17C01', // Jean Jennings
+  snyder: '04A17C02', // Betty Snyder
+  wescoff: '04A17C03', // Marlyn Wescoff
+  bilas: '04A17C04', // Fran Bilas
+  lichterman: '04A17C05', // Ruth Lichterman
+} as const;
+
+export type ProgrammerUid = (typeof PROGRAMMER_UIDS)[keyof typeof PROGRAMMER_UIDS];
+
+/** Maps card UIDs back to their respective programmer key. */
+export const UID_TO_PROGRAMMER: Record<string, ProgrammerKey> = {
+  [PROGRAMMER_UIDS.mcnulty]: 'mcnulty',
+  [PROGRAMMER_UIDS.jennings]: 'jennings',
+  [PROGRAMMER_UIDS.snyder]: 'snyder',
+  [PROGRAMMER_UIDS.wescoff]: 'wescoff',
+  [PROGRAMMER_UIDS.bilas]: 'bilas',
+  [PROGRAMMER_UIDS.lichterman]: 'lichterman',
 };
 
 // --- Display ---

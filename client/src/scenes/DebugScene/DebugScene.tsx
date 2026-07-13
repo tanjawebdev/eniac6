@@ -1,6 +1,6 @@
 import { useHardwareStore } from '../../stores/hardwareStore';
 import { useAppStore } from '../../stores/appStore';
-import { THEME_IDS, THEME_POT_MAPPING, NFC_PROGRAMMER_MAPPING } from '@shared/constants';
+import { THEME_IDS, THEME_POT_MAPPING, UID_TO_PROGRAMMER } from '@shared/constants';
 import { PROGRAMMERS } from '../../data/programmers';
 import './DebugScene.css';
 
@@ -75,26 +75,28 @@ export function DebugScene() {
         <div className="dbg-right-column">
           {/* NFC Readers */}
           <div className="dbg-card glass-panel readers-card">
-            <h3>NFC CONTROLLERS (6 PORTS)</h3>
+            <h3>NFC CONTROLLERS (6 SLOTS)</h3>
             <div className="dbg-nfc-list">
               {hardware.nfc.map((reader, index) => {
-                const progKey = NFC_PROGRAMMER_MAPPING[index];
+                const progKey = reader.present ? UID_TO_PROGRAMMER[reader.uid] : null;
                 const prog = progKey ? PROGRAMMERS[progKey] : null;
 
                 return (
                   <div key={index} className="dbg-nfc-row">
                     <div className="nfc-port">
-                      <span>PORT 0{index + 1}</span>
-                      <strong style={{ color: prog?.color }}>{prog?.firstName.toUpperCase() || 'UNKNOWN'}</strong>
+                      <span>SLOT 0{index}</span>
+                      <strong style={{ color: prog?.color || 'var(--text-muted)' }}>
+                        {prog ? prog.fullName.toUpperCase() : 'EMPTY'}
+                      </strong>
                     </div>
                     <div className="nfc-state">
                       {reader.present ? (
                         <>
-                          <span className="nfc-in-tag text-success">INSERTED</span>
+                          <span className="nfc-in-tag text-success">CARD IN</span>
                           <span className="nfc-uid-tag">{reader.uid}</span>
                         </>
                       ) : (
-                        <span className="text-muted">EMPTY</span>
+                        <span className="text-muted">OPEN</span>
                       )}
                     </div>
                   </div>

@@ -19,16 +19,22 @@ export function HomeScene() {
   const nfcStates = useHardwareStore((state) => state.nfc);
   const bananas = useHardwareStore((state) => state.banana);
 
-  // 1. Monitor NFC card changes to auto-select programmer
+  // 1. Monitor NFC card changes to auto-select programmer based on card UIDs
   useEffect(() => {
-    // Check if any reader has a card present
-    const activeReaderIdx = nfcStates.findIndex((n) => n.present);
-    if (activeReaderIdx !== -1) {
-      const programmer = PROGRAMMER_LIST.find((p) => p.nfcReader === activeReaderIdx);
-      if (programmer && selectedProgrammerKey !== programmer.key) {
-        selectProgrammer(programmer.key as any);
-        setActiveColor(programmer.color);
-      }
+    // Find all readers that have a card present with a valid UID
+    const presentCards = nfcStates.filter((n) => n.present && n.uid);
+    if (presentCards.length === 0) return;
+
+    // Find the card that was inserted/detected most recently
+    const mostRecentCard = presentCards.reduce((prev, curr) =>
+      curr.lastSeen > prev.lastSeen ? curr : prev
+    );
+
+    // Find the programmer associated with this card's UID
+    const programmer = PROGRAMMER_LIST.find((p) => p.uid === mostRecentCard.uid);
+    if (programmer && selectedProgrammerKey !== programmer.key) {
+      selectProgrammer(programmer.key);
+      setActiveColor(programmer.color);
     }
   }, [nfcStates, selectedProgrammerKey, selectProgrammer, setActiveColor]);
 
@@ -55,7 +61,7 @@ export function HomeScene() {
   }, [bananas, selectedProgrammerKey, themeColors, setThemeColor, selectTheme, goToScene]);
 
   const handleCardClick = (programmer: ProgrammerData) => {
-    selectProgrammer(programmer.key as any);
+    selectProgrammer(programmer.key);
     setActiveColor(programmer.color);
   };
 
@@ -84,7 +90,8 @@ export function HomeScene() {
           <div className="programmer-grid">
             {PROGRAMMER_LIST.map((prog) => {
               const isActive = selectedProgrammerKey === prog.key;
-              const isNfcIn = nfcStates[prog.nfcReader]?.present ?? false;
+              // Check if this programmer's card is present in ANY of the slots
+              const isNfcIn = nfcStates.some((n) => n.present && n.uid === prog.uid);
               return (
                 <ProgrammerCard
                   key={prog.key}

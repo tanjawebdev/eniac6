@@ -1,15 +1,17 @@
+import { PROGRAMMER_UIDS, UID_TO_PROGRAMMER, type ProgrammerKey } from '@shared/constants';
+
 export interface ProgrammerData {
-  key: string;
+  key: ProgrammerKey;
   name: string;        // Display name with \n for line break
   firstName: string;   // Short name
   fullName: string;    // Full name
   color: string;       // Hex color (updated to new colors)
   year: string;
   role: string;
-  nfcReader: number;   // Which NFC reader (0-5)
+  uid: string;         // Unique NFC UID associated with this programmer's card
 }
 
-export const PROGRAMMERS: Record<string, ProgrammerData> = {
+export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
   mcnulty: {
     key: 'mcnulty',
     name: 'Kay\nMcNulty',
@@ -18,7 +20,7 @@ export const PROGRAMMERS: Record<string, ProgrammerData> = {
     color: '#F0CA38',
     year: '1945',
     role: 'programmer',
-    nfcReader: 0,
+    uid: PROGRAMMER_UIDS.mcnulty,
   },
   jennings: {
     key: 'jennings',
@@ -28,7 +30,7 @@ export const PROGRAMMERS: Record<string, ProgrammerData> = {
     color: '#E78C2B',
     year: '1945',
     role: 'programmer',
-    nfcReader: 1,
+    uid: PROGRAMMER_UIDS.jennings,
   },
   snyder: {
     key: 'snyder',
@@ -38,7 +40,7 @@ export const PROGRAMMERS: Record<string, ProgrammerData> = {
     color: '#D84A1C',
     year: '1945',
     role: 'programmer',
-    nfcReader: 2,
+    uid: PROGRAMMER_UIDS.snyder,
   },
   wescoff: {
     key: 'wescoff',
@@ -48,7 +50,7 @@ export const PROGRAMMERS: Record<string, ProgrammerData> = {
     color: '#9B3A3D',
     year: '1945',
     role: 'programmer',
-    nfcReader: 3,
+    uid: PROGRAMMER_UIDS.wescoff,
   },
   bilas: {
     key: 'bilas',
@@ -58,7 +60,7 @@ export const PROGRAMMERS: Record<string, ProgrammerData> = {
     color: '#5C3D5E',
     year: '1945',
     role: 'programmer',
-    nfcReader: 4,
+    uid: PROGRAMMER_UIDS.bilas,
   },
   lichterman: {
     key: 'lichterman',
@@ -68,27 +70,15 @@ export const PROGRAMMERS: Record<string, ProgrammerData> = {
     color: '#0B3D7D',
     year: '1945',
     role: 'programmer',
-    nfcReader: 5,
+    uid: PROGRAMMER_UIDS.lichterman,
   },
 };
 
 export const PROGRAMMER_LIST = Object.values(PROGRAMMERS);
 
-/** Look up a programmer by their NFC reader index. */
-export function getProgrammerByReader(reader: number): ProgrammerData | undefined {
-  return PROGRAMMER_LIST.find((p) => p.nfcReader === reader);
-}
-
-/** Configured UIDs mapped to programmer keys (helpful for real exhibition) */
-export const NFC_UID_MAPPING: Record<string, string> = {
-  // Example UIDs - update these with real NFC card UIDs during deployment
-  '04A17C92': 'mcnulty',
-  // 'UID_HERE': 'jennings',
-};
-
 /** Look up a programmer by NFC UID. */
 export function getProgrammerByUid(uid: string): ProgrammerData | undefined {
-  const key = NFC_UID_MAPPING[uid];
+  const key = UID_TO_PROGRAMMER[uid];
   if (key) return PROGRAMMERS[key];
   return undefined;
 }

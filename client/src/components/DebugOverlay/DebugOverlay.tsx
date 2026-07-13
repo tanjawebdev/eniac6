@@ -2,7 +2,7 @@ import { useHardwareStore } from '../../stores/hardwareStore';
 import { useAppStore } from '../../stores/appStore';
 import { useDebug } from '../../hooks/useScene';
 import { WebSocketService } from '../../services/WebSocketService';
-import { THEME_IDS, THEME_POT_MAPPING, NFC_PROGRAMMER_MAPPING } from '@shared/constants';
+import { THEME_IDS, THEME_POT_MAPPING, PROGRAMMER_UIDS, UID_TO_PROGRAMMER } from '@shared/constants';
 import { PROGRAMMERS } from '../../data/programmers';
 import './DebugOverlay.css';
 
@@ -26,10 +26,15 @@ export function DebugOverlay() {
     wsService.sendEvent({ type: 'banana', id: bananaId, connected: !currentConnected });
   };
 
-  const handleNfcToggle = (readerIndex: number, present: boolean) => {
+  const handleNfcDropdownChange = (slotIndex: number, uid: string) => {
     if (!mockMode) return;
-    const uid = present ? '' : `04A17C${readerIndex}F`; // Generate static test UID
-    wsService.sendEvent({ type: 'nfc', reader: readerIndex, present: !present, uid });
+    if (uid === '') {
+      // Remove card from slot
+      wsService.sendEvent({ type: 'nfc', reader: slotIndex, present: false, uid: '' });
+    } else {
+      // Insert card into slot
+      wsService.sendEvent({ type: 'nfc', reader: slotIndex, present: true, uid });
+    }
   };
 
   const handleContactToggle = (id: number, currentActive: boolean) => {
@@ -118,7 +123,7 @@ export function DebugOverlay() {
                             onChange={(e) => handlePotChange(id, parseInt(e.target.value))}
                             className="pot-slider"
                             style={{
-                              background: `linear-gradient(to right, ${activeColor} 0%, ${activeColor} ${pct}%, rgba(255,255,255,0.08) ${pct}%)`,
+                              background: `linear-gradient(to right, ${activeColor} 0%, ${activeColor} ${pct}%, rgba(255, 255, 255, 0.08) ${pct}%)`,
                             }}
                           />
                         </div>
@@ -158,33 +163,42 @@ export function DebugOverlay() {
         </div>
       </section>
 
-      {/* NFC Readers */}
+      {/* NFC Readers (Slots 0-5 with select dropdown) */}
       <section className="debug-section">
         <h4>NFC Reader Slots (6)</h4>
         <div className="nfc-list">
           {hardware.nfc.map((reader, index) => {
-            const programmerKey = NFC_PROGRAMMER_MAPPING[index];
+            // Find programmer by currently detected UID in this slot
+            const programmerKey = reader.present ? UID_TO_PROGRAMMER[reader.uid] : null;
             const programmer = programmerKey ? PROGRAMMERS[programmerKey] : null;
+
             return (
-              <div
-                key={index}
-                className={`nfc-item ${mockMode ? 'clickable' : ''}`}
-                onClick={() => handleNfcToggle(index, reader.present)}
-              >
-                <div className="nfc-reader-info">
-                  <span className="nfc-idx">Reader {index}</span>
+              <div key={index} className="nfc-item-row">
+                <div className="nfc-label-col">
+                  <span className="nfc-idx">Slot {index}</span>
                   <span className="nfc-prog" style={{ color: programmer?.color }}>
-                    {programmer?.firstName || 'Unknown'}
+                    {programmer ? programmer.firstName : 'Empty'}
                   </span>
                 </div>
-                <div className="nfc-data">
-                  {reader.present ? (
-                    <>
-                      <span className="text-success font-weight-bold">CARD PRESENT</span>
-                      <span className="nfc-uid font-monospace">UID: {reader.uid}</span>
-                    </>
+                <div className="nfc-control-col">
+                  {mockMode ? (
+                    <select
+                      className="nfc-dropdown font-monospace"
+                      value={reader.present ? reader.uid : ''}
+                      onChange={(e) => handleNfcDropdownChange(index, e.target.value)}
+                    >
+                      <option value="">[ Empty Slot ]</option>
+                      <option value={PROGRAMMER_UIDS.mcnulty}>Kay McNulty (Gold)</option>
+                      <option value={PROGRAMMER_UIDS.jennings}>Jean Jennings (Orange)</option>
+                      <option value={PROGRAMMER_UIDS.snyder}>Betty Snyder (Red)</option>
+                      <option value={PROGRAMMER_UIDS.wescoff}>Marlyn Wescoff (Brown)</option>
+                      <option value={PROGRAMMER_UIDS.bilas}>Fran Bilas (Purple)</option>
+                      <option value={PROGRAMMER_UIDS.lichterman}>Ruth Lichterman (Blue)</option>
+                    </select>
                   ) : (
-                    <span className="text-muted">TAP CARD</span>
+                    <span className="nfc-uid font-monospace">
+                      {reader.present ? reader.uid : 'NO CARD'}
+                    </span>
                   )}
                 </div>
               </div>

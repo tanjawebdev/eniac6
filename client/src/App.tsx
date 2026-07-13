@@ -4,6 +4,7 @@ import { useAppStore } from './stores/appStore';
 import { useHardwareStore } from './stores/hardwareStore';
 import { AppShell } from './layouts/AppShell/AppShell';
 import { PROGRAMMERS } from './data/programmers';
+import type { ProgrammerKey } from '@shared/constants';
 
 export default function App() {
   // Connect WebSocket to backend to stream hardware state
@@ -44,11 +45,11 @@ export default function App() {
     const activeContactIndex = contacts.findIndex((active) => active);
     if (activeContactIndex !== -1) {
       // Map contact index (0-5) to programmer key
-      const keys = ['mcnulty', 'jennings', 'snyder', 'wescoff', 'bilas', 'lichterman'];
+      const keys: ProgrammerKey[] = ['mcnulty', 'jennings', 'snyder', 'wescoff', 'bilas', 'lichterman'];
       const key = keys[activeContactIndex];
       if (key) {
         const prog = PROGRAMMERS[key];
-        selectProgrammer(key as any);
+        selectProgrammer(key);
         useAppStore.getState().setActiveColor(prog.color);
       }
     }
