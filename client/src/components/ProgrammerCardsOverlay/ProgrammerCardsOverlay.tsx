@@ -19,7 +19,7 @@ export function ProgrammerCardsOverlay() {
   // Center of each column is left + 45.
   const CARD_POSITIONS: Record<string, { x: number; y: number }> = {
     mcnulty: { x: 150 + 8 * 155 + 45, y: 900 },      // Kay (Col 7)
-    jennings: { x: 150 + 5 * 155 + 45, y: 1171 },     // Jean (Col 5)
+    jennings: { x: 150 + 5 * 155 + 45, y: 1230 },     // Jean (Col 5)
     wescoff: { x: 150 + 2 * 155 + 45, y: 1843 },      // Marlyn (Col 1)
     snyder: { x: 150 + 2 * 155 + 45, y: 3091 },       // Betty (Col 1)
     bilas: { x: 150 + 2 * 155 + 45, y: 3340 },        // Fran (Col 1)

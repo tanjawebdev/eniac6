@@ -6,6 +6,7 @@ export interface ProgrammerData {
   firstName: string;   // Short name
   fullName: string;    // Full name
   color: string;       // Hex color (updated to new colors)
+  colorDark: string;       // Hex color (updated to new colors)
   year: string;
   role: string;
   uid: string;         // Unique NFC UID associated with this programmer's card
@@ -18,6 +19,7 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     firstName: 'Kay',
     fullName: 'Kathleen McNulty',
     color: '#F0CA38',
+    colorDark: '#d0b030ff',
     year: '1945',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.mcnulty,
@@ -28,6 +30,7 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     firstName: 'Jean',
     fullName: 'Betty Jean Jennings Bartik',
     color: '#E78C2B',
+    colorDark: '#cb7121ff',
     year: '1945',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.jennings,
@@ -38,6 +41,7 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     firstName: 'Betty',
     fullName: 'Betty Snyder Holberton',
     color: '#D84A1C',
+    colorDark: '#b63413ff',
     year: '1945',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.snyder,
@@ -48,6 +52,7 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     firstName: 'Marlyn',
     fullName: 'Marlyn Wescoff Meltzer',
     color: '#9B3A3D',
+    colorDark: '#803033ff',
     year: '1945',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.wescoff,
@@ -57,7 +62,8 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     name: 'Fran\nBilas',
     firstName: 'Fran',
     fullName: 'Frances Bilas Spence',
-    color: '#5C3D5E',
+    color: '#805383ff',
+    colorDark: '#5C3D5E',
     year: '1945',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.bilas,
@@ -67,7 +73,8 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     name: 'Ruth\nLichterman',
     firstName: 'Ruth',
     fullName: 'Ruth Lichterman Teitelbaum',
-    color: '#0B3D7D',
+    color: '#4769a1ff',
+    colorDark: '#0B3D7D',
     year: '1945',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.lichterman,
