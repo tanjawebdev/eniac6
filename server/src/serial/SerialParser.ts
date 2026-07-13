@@ -14,7 +14,6 @@ import type {
 } from '../../../shared/events.js';
 import {
   POT_COUNT,
-  BANANA_COUNT,
   CONTACT_COUNT,
   NFC_READER_COUNT,
 } from '../../../shared/constants.js';
@@ -57,13 +56,14 @@ function isContactEvent(data: any): data is ContactEvent {
 }
 
 function isBananaEvent(data: any): data is BananaEvent {
+  const themes = ['pioneering', 'programming', 'recognition', 'teamwork'];
+  const programmers = ['mcnulty', 'jennings', 'snyder', 'wescoff', 'bilas', 'lichterman'];
   return (
     data.type === 'banana' &&
-    typeof data.id === 'number' &&
-    Number.isInteger(data.id) &&
-    data.id >= 0 &&
-    data.id < BANANA_COUNT &&
-    typeof data.connected === 'boolean'
+    themes.includes(data.theme) &&
+    (data.socket === 0 || data.socket === 1) &&
+    typeof data.connected === 'boolean' &&
+    (data.programmer === null || programmers.includes(data.programmer))
   );
 }
 

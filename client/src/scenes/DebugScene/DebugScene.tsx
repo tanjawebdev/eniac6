@@ -108,17 +108,25 @@ export function DebugScene() {
           {/* Banana plugs and buttons */}
           <div className="dbg-card glass-panel plugs-card">
             <h3>PLUGBOARD JACKS &amp; SWITCHES</h3>
-            
+
             <div className="banana-connectors">
-              <span className="sub-header">BANANA PATCH PLUGS (4)</span>
+              <span className="sub-header">BANANA PATCH PLUGS (4 THEMES × 2 SOCKETS)</span>
               <div className="banana-indicators-grid">
                 {THEME_IDS.map((themeId, index) => {
-                  const connected = hardware.banana[index] ?? false;
+                  const tState = hardware.banana[themeId] || { socket0: null, socket1: null };
+                  const hasConnection = tState.socket0 !== null || tState.socket1 !== null;
                   return (
-                    <div key={themeId} className={`banana-plug-box ${connected ? 'active' : ''}`}>
-                      <span className="plug-id">JACK_0{index + 1}</span>
+                    <div key={themeId} className={`banana-plug-box ${hasConnection ? 'active' : ''}`}>
+                      <span className="plug-id">THEME_0{index + 1}</span>
                       <span className="plug-lbl">{themeId.toUpperCase()}</span>
-                      <span className="plug-status">{connected ? 'PATCHED' : 'OPEN'}</span>
+                      <div className="plug-slots">
+                        <div className="plug-slot-detail">
+                          <span>A:</span> <strong className={tState.socket0 ? 'text-success' : 'text-muted'}>{tState.socket0 ? tState.socket0.toUpperCase() : 'OPEN'}</strong>
+                        </div>
+                        <div className="plug-slot-detail">
+                          <span>B:</span> <strong className={tState.socket1 ? 'text-success' : 'text-muted'}>{tState.socket1 ? tState.socket1.toUpperCase() : 'OPEN'}</strong>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}

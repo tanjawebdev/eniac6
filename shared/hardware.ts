@@ -1,7 +1,4 @@
-// ============================================
-// Shared Hardware State — mirrors the physical installation
-// Used by both server (source of truth) and client (Zustand store).
-// ============================================
+import type { ProgrammerKey, ThemeId } from './constants';
 
 /** State of a single NFC reader. */
 export interface NfcReaderState {
@@ -10,13 +7,19 @@ export interface NfcReaderState {
   lastSeen: number; // timestamp (ms)
 }
 
+/** State of a theme's banana jacks. Up to two cards can be plugged into a theme at once. */
+export interface ThemeBananaState {
+  socket0: ProgrammerKey | null;
+  socket1: ProgrammerKey | null;
+}
+
 /** Complete hardware state snapshot. */
 export interface HardwareState {
   /** 16 potentiometer values, each 0–1023. */
   pots: number[];
 
-  /** 4 banana plug connection states. */
-  banana: boolean[];
+  /** Banana plug connection state per theme. */
+  banana: Record<ThemeId, ThemeBananaState>;
 
   /** 6 contact sensor states. */
   contacts: boolean[];
@@ -35,7 +38,12 @@ export interface HardwareState {
 export function createDefaultHardwareState(): HardwareState {
   return {
     pots: Array(16).fill(0),
-    banana: Array(4).fill(false),
+    banana: {
+      pioneering: { socket0: null, socket1: null },
+      programming: { socket0: null, socket1: null },
+      recognition: { socket0: null, socket1: null },
+      teamwork: { socket0: null, socket1: null },
+    },
     contacts: Array(6).fill(false),
     buttons: {
       home: false,

@@ -1,5 +1,6 @@
 import { useHardwareStore } from '../stores/hardwareStore';
-import type { NfcReaderState } from '@shared/hardware';
+import type { NfcReaderState, ThemeBananaState } from '@shared/hardware';
+import type { ThemeId } from '@shared/constants';
 
 export function usePot(id: number): number {
   return useHardwareStore((state) => state.pots[id] ?? 0);
@@ -13,8 +14,8 @@ export function useContact(id: number): boolean {
   return useHardwareStore((state) => state.contacts[id] ?? false);
 }
 
-export function useBanana(id: number): boolean {
-  return useHardwareStore((state) => state.banana[id] ?? false);
+export function useThemeBanana(theme: ThemeId): ThemeBananaState {
+  return useHardwareStore((state) => state.banana[theme]);
 }
 
 export function useNfc(reader: number): NfcReaderState {
@@ -36,7 +37,7 @@ export function useAllNfc(): NfcReaderState[] {
   return useHardwareStore((state) => state.nfc);
 }
 
-export function useAllBananas(): boolean[] {
+export function useAllBananas(): Record<ThemeId, ThemeBananaState> {
   return useHardwareStore((state) => state.banana);
 }
 

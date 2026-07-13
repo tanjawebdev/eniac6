@@ -1,11 +1,5 @@
-// ============================================
-// Shared Event Types — Arduino ↔ Backend ↔ Frontend
-// Uses discriminated unions for type-safe event handling.
-// ============================================
-
 import type { HardwareState } from './hardware';
-
-// --- Individual hardware event types ---
+import type { ThemeId, ProgrammerKey } from './constants';
 
 export interface PotEvent {
   type: 'pot';
@@ -28,8 +22,10 @@ export interface ContactEvent {
 
 export interface BananaEvent {
   type: 'banana';
-  id: number; // 0–3
+  theme: ThemeId;
+  socket: 0 | 1; // 2 banana plug sockets per theme
   connected: boolean;
+  programmer: ProgrammerKey | null; // Which woman is connected
 }
 
 export interface NfcEvent {

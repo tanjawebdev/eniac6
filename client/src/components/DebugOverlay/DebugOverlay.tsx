@@ -2,7 +2,7 @@ import { useHardwareStore } from '../../stores/hardwareStore';
 import { useAppStore } from '../../stores/appStore';
 import { useDebug } from '../../hooks/useScene';
 import { WebSocketService } from '../../services/WebSocketService';
-import { THEME_IDS, THEME_POT_MAPPING, PROGRAMMER_UIDS, UID_TO_PROGRAMMER } from '@shared/constants';
+import { THEME_IDS, THEME_POT_MAPPING, PROGRAMMER_UIDS, UID_TO_PROGRAMMER, type ThemeId, type ProgrammerKey } from '@shared/constants';
 import { PROGRAMMERS } from '../../data/programmers';
 import './DebugOverlay.css';
 
@@ -21,9 +21,25 @@ export function DebugOverlay() {
     wsService.sendEvent({ type: 'pot', id, value });
   };
 
-  const handleBananaToggle = (bananaId: number, currentConnected: boolean) => {
+  const handleBananaChange = (themeId: ThemeId, socket: 0 | 1, programmerKey: string) => {
     if (!mockMode) return;
-    wsService.sendEvent({ type: 'banana', id: bananaId, connected: !currentConnected });
+    if (programmerKey === '') {
+      wsService.sendEvent({
+        type: 'banana',
+        theme: themeId,
+        socket,
+        connected: false,
+        programmer: null,
+      });
+    } else {
+      wsService.sendEvent({
+        type: 'banana',
+        theme: themeId,
+        socket,
+        connected: true,
+        programmer: programmerKey as ProgrammerKey,
+      });
+    }
   };
 
   const handleNfcDropdownChange = (slotIndex: number, uid: string) => {
@@ -137,26 +153,63 @@ export function DebugOverlay() {
         </div>
       </section>
 
-      {/* Banana Plugs (Themes) */}
+      {/* Banana Plugs (Themes with 2 sockets each) */}
       <section className="debug-section">
-        <h4>Banana Plugs (4)</h4>
-        <div className="banana-grid">
+        <h4>Banana Plugs / Patching</h4>
+        <div className="banana-groups">
           {THEME_IDS.map((themeId) => {
-            const { bananaId } = THEME_POT_MAPPING[themeId];
-            const connected = hardware.banana[bananaId] ?? false;
+            const tState = hardware.banana[themeId] || { socket0: null, socket1: null };
             return (
-              <div
-                key={themeId}
-                className={`banana-item ${mockMode ? 'clickable' : ''}`}
-                onClick={() => handleBananaToggle(bananaId, connected)}
-              >
-                <div className="banana-label-group">
-                  <span className="banana-id">Plug {bananaId}</span>
-                  <span className="banana-theme">{themeId}</span>
+              <div key={themeId} className="banana-group-container">
+                <span className="banana-group-title">{themeId.toUpperCase()} JACKS</span>
+                <div className="banana-jacks-grid">
+                  {/* Socket 0 select */}
+                  <div className="banana-jack-item">
+                    <span className="banana-jack-lbl">Socket A</span>
+                    {mockMode ? (
+                      <select
+                        className="banana-dropdown font-monospace"
+                        value={tState.socket0 || ''}
+                        onChange={(e) => handleBananaChange(themeId, 0, e.target.value)}
+                      >
+                        <option value="">[ Open ]</option>
+                        <option value="mcnulty">Kay McNulty</option>
+                        <option value="jennings">Jean Jennings</option>
+                        <option value="snyder">Betty Snyder</option>
+                        <option value="wescoff">Marlyn Wescoff</option>
+                        <option value="bilas">Fran Bilas</option>
+                        <option value="lichterman">Ruth Lichterman</option>
+                      </select>
+                    ) : (
+                      <span className="banana-jack-val">
+                        {tState.socket0 ? tState.socket0.toUpperCase() : 'OPEN'}
+                      </span>
+                    )}
+                  </div>
+                  {/* Socket 1 select */}
+                  <div className="banana-jack-item">
+                    <span className="banana-jack-lbl">Socket B</span>
+                    {mockMode ? (
+                      <select
+                        className="banana-dropdown font-monospace"
+                        value={tState.socket1 || ''}
+                        onChange={(e) => handleBananaChange(themeId, 1, e.target.value)}
+                      >
+                        <option value="">[ Open ]</option>
+                        <option value="mcnulty">Kay McNulty</option>
+                        <option value="jennings">Jean Jennings</option>
+                        <option value="snyder">Betty Snyder</option>
+                        <option value="wescoff">Marlyn Wescoff</option>
+                        <option value="bilas">Fran Bilas</option>
+                        <option value="lichterman">Ruth Lichterman</option>
+                      </select>
+                    ) : (
+                      <span className="banana-jack-val">
+                        {tState.socket1 ? tState.socket1.toUpperCase() : 'OPEN'}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <span className={`banana-status ${connected ? 'active' : ''}`}>
-                  {connected ? 'PLUGGED' : 'OPEN'}
-                </span>
               </div>
             );
           })}

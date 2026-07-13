@@ -23,7 +23,15 @@ export function HomeScene() {
   useEffect(() => {
     // Find all readers that have a card present with a valid UID
     const presentCards = nfcStates.filter((n) => n.present && n.uid);
-    if (presentCards.length === 0) return;
+
+    if (presentCards.length === 0) {
+      // If no cards are present, clear the selection and restore default color
+      if (selectedProgrammerKey !== null) {
+        selectProgrammer(null);
+        setActiveColor('#c89b3c'); // Default warm gold
+      }
+      return;
+    }
 
     // Find the card that was inserted/detected most recently
     const mostRecentCard = presentCards.reduce((prev, curr) =>
@@ -38,27 +46,23 @@ export function HomeScene() {
     }
   }, [nfcStates, selectedProgrammerKey, selectProgrammer, setActiveColor]);
 
-  // 2. Monitor banana plug connections to set theme colors and auto-open theme
+  // 2. Monitor banana plug connections to auto-open theme
   useEffect(() => {
-    bananas.forEach((connected, index) => {
-      if (connected) {
-        const themeId = THEME_IDS[index];
-        if (themeId) {
-          // If a programmer is currently selected, map her color to this theme
-          if (selectedProgrammerKey) {
-            const prog = PROGRAMMER_LIST.find((p) => p.key === selectedProgrammerKey);
-            if (prog && themeColors[themeId] !== prog.color) {
-              setThemeColor(themeId, prog.color);
-            }
-          }
-          
-          // Auto-navigate to this theme scene when banana is plugged
-          selectTheme(themeId);
-          goToScene('theme');
-        }
-      }
+    // Find if any theme is currently plugged in
+    const activeTheme = THEME_IDS.find((themeId) => {
+      const tState = bananas[themeId];
+      return tState && (tState.socket0 !== null || tState.socket1 !== null);
     });
-  }, [bananas, selectedProgrammerKey, themeColors, setThemeColor, selectTheme, goToScene]);
+
+    if (activeTheme) {
+      const currentScene = useAppStore.getState().currentScene;
+      const selectedTheme = useAppStore.getState().selectedTheme;
+      if (currentScene === 'home' && selectedTheme !== activeTheme) {
+        selectTheme(activeTheme);
+        goToScene('theme');
+      }
+    }
+  }, [bananas, selectTheme, goToScene]);
 
   const handleCardClick = (programmer: ProgrammerData) => {
     selectProgrammer(programmer.key);
@@ -115,7 +119,8 @@ export function HomeScene() {
 
             <div className="theme-list">
               {THEME_IDS.map((themeId, idx) => {
-                const isConnected = bananas[idx] ?? false;
+                const themeState = bananas[themeId];
+                const isConnected = themeState && (themeState.socket0 !== null || themeState.socket1 !== null);
                 const activeColor = themeColors[themeId];
                 const hasColor = activeColor !== '#333333';
 

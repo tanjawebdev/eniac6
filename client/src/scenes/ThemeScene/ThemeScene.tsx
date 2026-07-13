@@ -16,9 +16,9 @@ export function ThemeScene() {
 
   // Return to home if banana plug disconnects
   useEffect(() => {
-    if (selectedTheme && THEME_POT_MAPPING[selectedTheme]) {
-      const { bananaId } = THEME_POT_MAPPING[selectedTheme];
-      const isConnected = bananas[bananaId] ?? false;
+    if (selectedTheme) {
+      const tState = bananas[selectedTheme];
+      const isConnected = tState && (tState.socket0 !== null || tState.socket1 !== null);
       // If the jack is unplugged, automatically kick back to home
       if (!isConnected) {
         goHome();
@@ -148,7 +148,7 @@ export function ThemeScene() {
                 <circle cx="200" cy="80" r={size} fill={activeColor} />
                 <circle cx="320" cy="290" r={size} fill={activeColor} />
                 <circle cx="80" cy="290" r={size} fill={activeColor} />
-                
+
                 {amount > 5 && (
                   <line x1="200" y1="80" x2="200" y2="220" strokeWidth="1" strokeDasharray="4 4" />
                 )}
@@ -239,7 +239,7 @@ export function ThemeScene() {
           </div>
         </div>
       </div>
-      
+
       {selectedProgrammer && (
         <div className="theme-programmer-indicator" style={{ borderLeft: `3px solid ${activeColor}` }}>
           <span>CONNECTED TO:</span>

@@ -35,9 +35,11 @@ export class HardwareStateManager extends EventEmitter {
         this.state.contacts[event.id] = event.active;
         break;
 
-      case 'banana':
-        this.state.banana[event.id] = event.connected;
+      case 'banana': {
+        const key = event.socket === 0 ? 'socket0' : 'socket1';
+        this.state.banana[event.theme][key] = event.connected ? event.programmer : null;
         break;
+      }
 
       case 'nfc':
         this.state.nfc[event.reader] = {

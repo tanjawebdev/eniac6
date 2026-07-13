@@ -174,21 +174,72 @@
   display: none;
 }
 
-/* Banana Grid */
-.banana-grid {
+/* Banana Plugs / Groups */
+.banana-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.banana-group-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.banana-group-title {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.banana-jacks-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
-.banana-item {
+.banana-jack-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
   padding: 8px 10px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-panel);
   border-radius: 6px;
+}
+
+.banana-jack-lbl {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.banana-dropdown {
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid var(--border-panel);
+  color: var(--text-primary);
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+}
+
+.banana-dropdown:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.banana-dropdown option {
+  background: #111;
+  color: var(--text-primary);
+}
+
+.banana-jack-val {
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .clickable {

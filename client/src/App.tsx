@@ -13,8 +13,6 @@ export default function App() {
   const toggleDevScale = useAppStore((state) => state.toggleDevScale);
   const goToScene = useAppStore((state) => state.goToScene);
   const selectProgrammer = useAppStore((state) => state.selectProgrammer);
-  const themeColors = useAppStore((state) => state.themeColors);
-  const setThemeColor = useAppStore((state) => state.setThemeColor);
   const currentScene = useAppStore((state) => state.currentScene);
 
   // Monitor hardware buttons (Home, Intro) for global navigation triggers
@@ -55,33 +53,7 @@ export default function App() {
     }
   }, [contacts, currentScene, selectProgrammer]);
 
-  // Monitor banana plug connections to select themes
-  // Theme 0: pioneering, Theme 1: programming, Theme 2: recognition, Theme 3: teamwork
-  const bananas = useHardwareStore((state) => state.banana);
-  const selectedProgrammer = useAppStore((state) => state.selectedProgrammer);
 
-  useEffect(() => {
-    // Check if any banana plug is newly connected and we have an active programmer selected
-    // Note: If a banana plug (0-3) is connected, we update that theme's design color
-    // to match the active programmer's color.
-    bananas.forEach((connected, index) => {
-      if (connected && selectedProgrammer) {
-        const prog = PROGRAMMERS[selectedProgrammer];
-        if (prog) {
-          const themes: ('pioneering' | 'programming' | 'recognition' | 'teamwork')[] = [
-            'pioneering',
-            'programming',
-            'recognition',
-            'teamwork',
-          ];
-          const themeId = themes[index];
-          if (themeId && themeColors[themeId] !== prog.color) {
-            setThemeColor(themeId, prog.color);
-          }
-        }
-      }
-    });
-  }, [bananas, selectedProgrammer, themeColors, setThemeColor]);
 
   // Global Keyboard Event Handlers for development (Debug, Scaler)
   useEffect(() => {

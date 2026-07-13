@@ -267,15 +267,37 @@
   margin: 2px 0 6px 0;
   text-transform: uppercase;
   font-size: 9px;
+  color: var(--text-secondary);
 }
 
-.plug-status {
+.plug-slots {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  border-top: 1px dashed var(--border-panel);
+  padding-top: 6px;
+}
+
+.plug-slot-detail {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 8px;
+}
+
+.plug-slot-detail span {
+  color: var(--text-muted);
+}
+
+.plug-slot-detail strong {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.banana-plug-box.active .plug-slot-detail strong {
   font-weight: 700;
-  color: #ff3333;
-}
-
-.banana-plug-box.active .plug-status {
-  color: #33ff33;
 }
 
 .sw-grid {
