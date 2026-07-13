@@ -27,6 +27,7 @@ export function CanvasBackground() {
   const getActiveShape = () => {
     if (!selectedTheme) {
       if (currentScene === 'intro') return 'circle';
+      if (currentScene === 'home') return null;
       return 'circle';
     }
 

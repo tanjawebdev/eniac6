@@ -18,12 +18,12 @@ export function ProgrammerCardsOverlay() {
   // 12 columns are positioned left: 100 + idx * 150.
   // Center of each column is left + 45.
   const CARD_POSITIONS: Record<string, { x: number; y: number }> = {
-    mcnulty: { x: 100 + 7 * 150 + 45, y: 960 },      // Kay (Col 7)
-    jennings: { x: 100 + 5 * 150 + 45, y: 1171 },     // Jean (Col 5)
-    wescoff: { x: 100 + 1 * 150 + 45, y: 1843 },      // Marlyn (Col 1)
-    snyder: { x: 100 + 1 * 150 + 45, y: 3091 },       // Betty (Col 1)
-    bilas: { x: 100 + 1 * 150 + 45, y: 3340 },        // Fran (Col 1)
-    lichterman: { x: 100 + 5 * 150 + 45, y: 3340 },   // Ruth (Col 5)
+    mcnulty: { x: 150 + 8 * 155 + 45, y: 900 },      // Kay (Col 7)
+    jennings: { x: 150 + 5 * 155 + 45, y: 1171 },     // Jean (Col 5)
+    wescoff: { x: 150 + 2 * 155 + 45, y: 1843 },      // Marlyn (Col 1)
+    snyder: { x: 150 + 2 * 155 + 45, y: 3091 },       // Betty (Col 1)
+    bilas: { x: 150 + 2 * 155 + 45, y: 3340 },        // Fran (Col 1)
+    lichterman: { x: 150 + 5 * 155 + 45, y: 3340 },   // Ruth (Col 5)
   };
 
   const handleCardClick = (key: ProgrammerKey) => {

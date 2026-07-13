@@ -10,7 +10,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 80px 0;
+  padding: 40px 0;
   user-select: none;
 }
 
@@ -19,34 +19,58 @@
   text-align: center;
   font-family: var(--font-mono);
   font-size: 40px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.7);
   z-index: 10;
+
+  .text-light {
+    opacity: 0.5;
+    ;
+  }
+}
+
+.home-rect-top,
+.home-rect-bottom {
+  position: absolute;
+  top: 0;
+  left: 310px;
+  width: 220px;
+  height: 18px;
+  background: #ffffff;
+  opacity: 0.3;
+  z-index: 10;
+}
+
+.home-rect-bottom {
+  top: auto;
+  bottom: 0;
 }
 
 .home-footer-text {
   text-align: center;
   font-family: var(--font-mono);
+  font-weight: 600;
   font-size: 40px;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.7);
   z-index: 10;
 }
 
 /* Right rotated vertical text */
 .home-vertical-text {
   position: absolute;
-  right: 60px;
-  top: 50%;
-  transform: translate(50%, -50%) rotate(90deg);
+  right: -41%;
+  top: 1200px;
+  transform: translateY(-50%) rotate(90deg);
   font-family: var(--font-display);
   font-size: 67px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: rgba(255, 255, 255, 0.18);
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.3);
   white-space: nowrap;
   z-index: 10;
 }
@@ -57,7 +81,7 @@
   inset: 0;
   display: flex;
   justify-content: space-between;
-  padding: 0 180px 0 100px;
+  padding: 240px 180px 0 100px;
   z-index: 1;
 }
 
@@ -75,11 +99,14 @@
   font-family: var(--font-mono);
   font-size: 65px;
   line-height: 1.05;
-  color: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.5);
   /* very subtle numbers */
+  font-weight: 500;
   word-break: break-all;
   text-align: center;
   user-select: none;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
 }
 
 /* Horizontal grey slider handles */
@@ -89,10 +116,33 @@
   transform: translateX(-50%);
   width: 90px;
   height: 35px;
-  background: #3a3a3a;
-  border-radius: 4px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  background: #979696;
   pointer-events: none;
+}
+
+.bg-slider-handle.animated-handle {
+  animation-name: pulse-handle;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+  opacity: 0;
+}
+
+@keyframes pulse-handle {
+
+  0%,
+  10% {
+    opacity: 0;
+  }
+
+  15%,
+  85% {
+    opacity: 1;
+  }
+
+  90%,
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Big Headlines overlay */
@@ -106,10 +156,10 @@
 .home-h1 {
   position: absolute;
   top: 15%;
-  left: 100px;
+  left: 83px;
   font-family: var(--font-display);
   font-size: 380px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 0.85;
   letter-spacing: -0.02em;
   color: #ffffff;
@@ -119,10 +169,10 @@
 .home-h2 {
   position: absolute;
   bottom: 22%;
-  right: 220px;
+  right: 160px;
   font-family: var(--font-display);
   font-size: 225px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 0.9;
   letter-spacing: -0.01em;
   color: #ffffff;

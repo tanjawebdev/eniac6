@@ -58,9 +58,12 @@ export function HomeScene() {
 
   return (
     <div className="home-scene">
+      {/* Top Left: Rect */}
+      <div className="home-rect-top"></div>
+
       {/* Top Center: Inserted programmers count */}
       <div className="home-header-text">
-        {insertedCount}/6 programmers inserted
+        {insertedCount}<span className="text-light">/6 </span>programmers inserted
       </div>
 
       {/* Right-aligned vertically rotated label */}
@@ -72,19 +75,34 @@ export function HomeScene() {
       <div className="home-bg-columns">
         {Array.from({ length: 12 }).map((_, colIdx) => {
           const digit = Math.floor((11 - colIdx) / 2) + 1; // 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1
-          const repeatingDigits = digit.toString().repeat(90);
-          
+          const repeatingDigits = digit.toString().repeat(87);
+
           return (
-            <div 
-              key={colIdx} 
+            <div
+              key={colIdx}
               className="bg-column"
-              style={{ left: `${100 + colIdx * 150}px` }}
+              style={{ left: `${150 + colIdx * 155}px` }}
             >
               <span className="bg-digits">{repeatingDigits}</span>
-              <div 
-                className="bg-slider-handle" 
-                style={{ top: `${SLIDER_POSITIONS[colIdx]}%` }}
-              />
+
+              {/* Multiple animated slider handles per track column */}
+              {Array.from({ length: 2 }).map((_, handleIdx) => {
+                const topPercent = (SLIDER_POSITIONS[colIdx] + handleIdx * 25) % 85 + 1;
+                const duration = 5 + ((colIdx * 7 + handleIdx * 13) % 5);
+                const delay = -1 - ((colIdx * 11 + handleIdx * 17) % 8);
+
+                return (
+                  <div
+                    key={handleIdx}
+                    className="bg-slider-handle animated-handle"
+                    style={{
+                      top: `${topPercent}%`,
+                      animationDuration: `${duration}s`,
+                      animationDelay: `${delay}s`,
+                    }}
+                  />
+                );
+              })}
             </div>
           );
         })}
@@ -108,6 +126,9 @@ export function HomeScene() {
       <div className="home-footer-text">
         eniac - completed 1945
       </div>
+
+      {/* Bottom Center: Rect */}
+      <div className="home-rect-bottom"></div>
     </div>
   );
 }
