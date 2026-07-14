@@ -1,12 +1,23 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useAppStore } from './stores/appStore';
 import { useHardwareStore } from './stores/hardwareStore';
 import { AppShell } from './layouts/AppShell/AppShell';
+import { DebugPage } from './pages/DebugPage/DebugPage';
 import { PROGRAMMERS } from './data/programmers';
 import type { ProgrammerKey } from '@shared/constants';
 
 export default function App() {
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // Connect WebSocket to backend to stream hardware state
   useWebSocket();
   const toggleDebug = useAppStore((state) => state.toggleDebug);
@@ -81,6 +92,10 @@ export default function App() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [toggleDebug, toggleDevScale, goToScene]);
+
+  if (currentPath === '/debug') {
+    return <DebugPage />;
+  }
 
   return <AppShell />;
 }
