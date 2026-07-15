@@ -1,4 +1,9 @@
 import { Particle } from './Particle';
+import { ThemeAnimator } from './themes/ThemeAnimator';
+import { ProgrammingAnimator } from './themes/ProgrammingAnimator';
+import { PioneeringAnimator } from './themes/PioneeringAnimator';
+import { RecognitionAnimator } from './themes/RecognitionAnimator';
+import { TeamworkAnimator } from './themes/TeamworkAnimator';
 
 export interface EngineConfig {
   color: string | null;
@@ -16,22 +21,6 @@ export interface EngineConfig {
   pot3: number;
 }
 
-interface FloatingCircle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  radius: number;
-}
-
-interface Footstep {
-  x: number;
-  y: number;
-  age: number;
-  isLeft: boolean;
-  angle: number;
-}
-
 export class AnimationEngine {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -41,24 +30,13 @@ export class AnimationEngine {
   private width = 0;
   private height = 0;
 
-  // Teamwork: floating circles
-  private circles: FloatingCircle[] = [];
-  private circlesInitCount = 0;
-
-  // Recognition: pre-rendered blurry text texture
-  private blurTexture: HTMLCanvasElement | null = null;
-  private blurTextureKey = '';
-  private blurScrollX = 0;
-  private blurScrollY = 0;
-  private staticBlurWords: Array<{ rx: number; ry: number; word: string; threshold: number }> = [];
-
-  // Pioneering: footsteps
-  private footsteps: Footstep[] = [];
-  private footstepTimer = 0;
-  private footstepPathX = 0;
-  private footstepPathY = 0;
-  private footstepAngle = -Math.PI / 4; // walking diagonally
-  private footstepLeft = true;
+  // Theme-specific delegate animators
+  private animators: Record<string, ThemeAnimator> = {
+    programming: new ProgrammingAnimator(),
+    pioneering: new PioneeringAnimator(),
+    recognition: new RecognitionAnimator(),
+    teamwork: new TeamworkAnimator(),
+  };
 
   private blobs: Array<{
     rx: number;
@@ -92,8 +70,6 @@ export class AnimationEngine {
       throw new Error('Could not get 2D rendering context');
     }
     this.ctx = context;
-
-    this.initStaticBlurWords();
 
     // Handle resizing
     this.resize();
@@ -184,22 +160,17 @@ export class AnimationEngine {
 
     ctx.clearRect(0, 0, width, height);
 
-    // Route to theme-specific draw methods
-    if (config.activeTheme) {
-      switch (config.activeTheme) {
-        case 'programming':
-          this.drawAsciiWave(ctx, width, height, timestamp || performance.now());
-          return;
-        case 'pioneering':
-          this.drawFootstepsAnimation(ctx, width, height, timestamp || performance.now());
-          return;
-        case 'recognition':
-          this.drawBlurryText(ctx, width, height, timestamp || performance.now());
-          return;
-        case 'teamwork':
-          this.drawConnectedCircles(ctx, width, height, timestamp || performance.now());
-          return;
-      }
+    // Route to theme-specific delegate animators if one is active
+    if (config.activeTheme && this.animators[config.activeTheme]) {
+      this.animators[config.activeTheme].draw(
+        ctx,
+        width,
+        height,
+        timestamp || performance.now(),
+        config,
+        this.startTime
+      );
+      return;
     }
 
     if (config.allInserted) {
@@ -263,413 +234,6 @@ export class AnimationEngine {
       p.draw(ctx, config.shape, config.color, mappedSize, mappedRotate, time);
     }
   };
-
-  // ─── PROGRAMMING: ASCII Wave ──────────────────────────────────────────
-  private drawAsciiWave(ctx: CanvasRenderingContext2D, width: number, height: number, timestamp: number): void {
-    ctx.fillStyle = this.config.backgroundColor;
-    ctx.fillRect(0, 0, width, height);
-
-    const scaleVal = this.config.pot0 / 1023;
-    const speedVal = this.config.pot1 / 1023;
-    const contrastVal = this.config.pot2 / 1023;
-    const amplitudeVal = this.config.pot3 / 1023;
-
-    const fontSize = Math.max(14, Math.round(15 + scaleVal * 20));
-    const cellWidth = Math.max(12, Math.round(11 + scaleVal * 15));
-    const cellHeight = Math.max(18, Math.round(16 + scaleVal * 22));
-
-    ctx.font = `bold ${fontSize}px "IBM Plex Mono", monospace`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    const alpha = contrastVal * 0.4 + 0.1;
-    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
-
-    const timeFactor = (timestamp - this.startTime) * 0.001 * (0.2 + speedVal * 3);
-
-    // Amplitude controls wave displacement (pot3)
-    const amplitude = 5 + amplitudeVal * 40;
-
-    const chars = 'QQQQ R S T U W Z e e * STVX ? @ > < [ ] I I I N N N M M M L L L K K K J J J H H H G G G F F F E E E D D D C C C B B B A A A ';
-
-    const cols = Math.ceil(width / cellWidth) + 1;
-    const rows = Math.ceil(height / cellHeight) + 1;
-
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const x = c * cellWidth;
-        const y = r * cellHeight;
-
-        // Wave formula for layout distortion and index selection
-        const waveIndexValue = (c * 0.1) + (r * 0.15) + Math.sin(c * 0.04 + r * 0.06 + timeFactor) * 6;
-        const charIdx = Math.floor(Math.abs(waveIndexValue));
-        const char = chars[charIdx % chars.length];
-
-        const posX = x + Math.sin(r * 0.12 + timeFactor) * amplitude;
-        const posY = y + Math.cos(c * 0.08 + timeFactor) * (amplitude * 0.5);
-
-        ctx.fillText(char, posX, posY);
-      }
-    }
-  }
-
-  // ─── PIONEERING: Pixelated Halftone Footsteps ────────────────────────
-  private drawFootstepsAnimation(ctx: CanvasRenderingContext2D, width: number, height: number, _timestamp: number): void {
-    ctx.fillStyle = this.config.backgroundColor;
-    ctx.fillRect(0, 0, width, height);
-
-    const rasterSize = Math.max(2, Math.round(2 + (this.config.pot0 / 1023) * 12));
-    const speedVal = 0.5 + (this.config.pot1 / 1023) * 4;
-    const dotSize = Math.max(1, Math.round(1 + (this.config.pot2 / 1023) * rasterSize * 0.9));
-    const contrastVal = 0.3 + (this.config.pot3 / 1023) * 0.7;
-
-    const dt = 16; // approximate frame time
-    this.footstepTimer += dt * speedVal;
-
-    // Spawn a new footstep every ~500ms (adjusted by speed)
-    const spawnInterval = 500 / speedVal;
-    if (this.footstepTimer >= spawnInterval) {
-      this.footstepTimer -= spawnInterval;
-
-      // Initialize position if starting fresh
-      if (this.footsteps.length === 0) {
-        this.footstepPathX = width * 0.2 + Math.random() * width * 0.3;
-        this.footstepPathY = height + 80;
-        this.footstepAngle = -Math.PI / 2 + (Math.random() - 0.5) * 0.6;
-      }
-
-      // Step distance
-      const stepLen = 80 + Math.random() * 30;
-      this.footstepPathX += Math.cos(this.footstepAngle) * stepLen * 0.5;
-      this.footstepPathY += Math.sin(this.footstepAngle) * stepLen;
-
-      // Slight lateral offset for left/right foot
-      const lateralOffset = this.footstepLeft ? -25 : 25;
-      const fx = this.footstepPathX + Math.sin(this.footstepAngle) * lateralOffset;
-      const fy = this.footstepPathY - Math.cos(this.footstepAngle) * lateralOffset;
-
-      this.footsteps.push({
-        x: fx,
-        y: fy,
-        age: 0,
-        isLeft: this.footstepLeft,
-        angle: this.footstepAngle + (Math.random() - 0.5) * 0.15,
-      });
-
-      this.footstepLeft = !this.footstepLeft;
-
-      // Gentle drift in direction
-      this.footstepAngle += (Math.random() - 0.5) * 0.3;
-      // Clamp to mostly upward
-      this.footstepAngle = Math.max(-Math.PI * 0.85, Math.min(-Math.PI * 0.15, this.footstepAngle));
-
-      // When path goes off-screen, reset
-      if (this.footstepPathY < -200 || this.footstepPathX < -100 || this.footstepPathX > width + 100) {
-        this.footstepPathX = width * 0.2 + Math.random() * width * 0.6;
-        this.footstepPathY = height + 80;
-        this.footstepAngle = -Math.PI / 2 + (Math.random() - 0.5) * 0.6;
-      }
-    }
-
-    // Age and cull footsteps
-    for (const f of this.footsteps) {
-      f.age += dt * speedVal;
-    }
-    // Keep max ~40 footsteps
-    while (this.footsteps.length > 40) {
-      this.footsteps.shift();
-    }
-
-    // Draw halftone raster background
-    const gap = rasterSize * 2;
-    const cols = Math.ceil(width / gap) + 1;
-    const rows = Math.ceil(height / gap) + 1;
-
-    // Create a temporary canvas to build the footstep mask
-    const maskCanvas = document.createElement('canvas');
-    maskCanvas.width = width;
-    maskCanvas.height = height;
-    const maskCtx = maskCanvas.getContext('2d')!;
-    maskCtx.fillStyle = '#000000';
-
-    // Draw footprint silhouettes on the mask
-    for (const step of this.footsteps) {
-      const fadeIn = Math.min(1, step.age / 300);
-      const fadeOut = Math.max(0, 1 - step.age / 8000);
-      const opacity = fadeIn * fadeOut;
-      if (opacity <= 0) continue;
-
-      maskCtx.save();
-      maskCtx.globalAlpha = opacity;
-      maskCtx.translate(step.x, step.y);
-      maskCtx.rotate(step.angle + Math.PI / 2);
-      this.drawFootprintShape(maskCtx, step.isLeft, 1.0);
-      maskCtx.restore();
-    }
-
-    // Now render as halftone dots
-    ctx.fillStyle = `rgba(0, 0, 0, ${contrastVal})`;
-    const maskData = maskCtx.getImageData(0, 0, width, height).data;
-
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const cx = c * gap;
-        const cy = r * gap;
-
-        // Sample mask at this position
-        const px = Math.min(width - 1, Math.max(0, Math.round(cx)));
-        const py = Math.min(height - 1, Math.max(0, Math.round(cy)));
-        const idx = (py * width + px) * 4;
-        const maskAlpha = maskData[idx + 3] / 255;
-
-        // Dot size scales with mask darkness
-        const radius = dotSize * (0.15 + maskAlpha * 0.85);
-
-        if (radius > 0.3) {
-          ctx.beginPath();
-          ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    }
-  }
-
-  private drawFootprintShape(ctx: CanvasRenderingContext2D, isLeft: boolean, scale: number): void {
-    const s = scale * 1.2;
-    const mirror = isLeft ? -1 : 1;
-
-    ctx.beginPath();
-
-    // Heel (ellipse)
-    ctx.ellipse(0, 20 * s, 14 * s, 18 * s, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Ball of foot (wider ellipse)
-    ctx.beginPath();
-    ctx.ellipse(2 * mirror * s, -18 * s, 20 * s, 15 * s, 0.1 * mirror, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Toes
-    const toePositions = [
-      { x: -10 * mirror, y: -38, r: 6 },
-      { x: -2 * mirror, y: -42, r: 6.5 },
-      { x: 7 * mirror, y: -40, r: 6 },
-      { x: 14 * mirror, y: -35, r: 5 },
-      { x: 19 * mirror, y: -28, r: 4.5 },
-    ];
-
-    for (const toe of toePositions) {
-      ctx.beginPath();
-      ctx.arc(toe.x * s, toe.y * s, toe.r * s, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  // ─── RECOGNITION: Blurry Text (Pre-rendered offscreen) ───────────────
-  private drawBlurryText(ctx: CanvasRenderingContext2D, width: number, height: number, _timestamp: number): void {
-    ctx.fillStyle = this.config.backgroundColor;
-    ctx.fillRect(0, 0, width, height);
-
-    const blurRatio = this.config.pot0 / 1023; // DENSITY controls what fraction of text is blurred
-    const speedVal = 0.2 + (this.config.pot1 / 1023) * 2; // SPEED controls drift speed
-    const blurAmount = Math.max(1, Math.round(1 + (this.config.pot2 / 1023) * 25)); // BLUR controls blur radius
-    const fontSizeVal = Math.max(14, Math.round(14 + (this.config.pot3 / 1023) * 60)); // FONT SIZE controls font size
-
-    // Build a cache key from the parameters that affect the texture
-    const texKey = `${blurRatio.toFixed(2)}_${blurAmount}_${fontSizeVal}_${width}_${height}`;
-
-    // Only re-render the offscreen texture when parameters change
-    if (this.blurTextureKey !== texKey) {
-      this.blurTexture = this.renderBlurTexture(width, height, blurRatio, blurAmount, fontSizeVal);
-      this.blurTextureKey = texKey;
-    }
-
-    if (!this.blurTexture) return;
-
-    // Animate by scrolling the texture
-    this.blurScrollX += speedVal * 0.3;
-    this.blurScrollY += speedVal * 0.15;
-
-    const texW = this.blurTexture.width;
-    const texH = this.blurTexture.height;
-
-    // Tile the texture with wrap-around for seamless scrolling
-    const offsetX = ((this.blurScrollX % texW) + texW) % texW;
-    const offsetY = ((this.blurScrollY % texH) + texH) % texH;
-
-    // Draw 4 copies to cover the viewport with seamless wrapping
-    ctx.drawImage(this.blurTexture, -offsetX, -offsetY);
-    ctx.drawImage(this.blurTexture, texW - offsetX, -offsetY);
-    ctx.drawImage(this.blurTexture, -offsetX, texH - offsetY);
-    ctx.drawImage(this.blurTexture, texW - offsetX, texH - offsetY);
-  }
-
-  /**
-   * Render the blurry text texture onto an offscreen canvas ONCE.
-   * This is the expensive operation, but it only runs when pot values change.
-   */
-  private renderBlurTexture(
-    width: number, height: number,
-    blurRatio: number, blurAmount: number, fontSize: number
-  ): HTMLCanvasElement {
-    // Make the texture slightly larger than viewport for seamless tiling
-    const texW = Math.ceil(width * 1.5);
-    const texH = Math.ceil(height * 1.5);
-
-    // Step 1: Draw the crisp text to be blurred
-    const crispCanvas = document.createElement('canvas');
-    crispCanvas.width = texW;
-    crispCanvas.height = texH;
-    const crispCtx = crispCanvas.getContext('2d')!;
-
-    crispCtx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-    crispCtx.font = `bold ${fontSize}px "Space Grotesk", "IBM Plex Mono", monospace`;
-    crispCtx.textAlign = 'center';
-    crispCtx.textBaseline = 'middle';
-
-    // Step 2: Draw the crisp text that stays sharp
-    const sharpCanvas = document.createElement('canvas');
-    sharpCanvas.width = texW;
-    sharpCanvas.height = texH;
-    const sharpCtx = sharpCanvas.getContext('2d')!;
-
-    sharpCtx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-    sharpCtx.font = `bold ${fontSize}px "Space Grotesk", "IBM Plex Mono", monospace`;
-    sharpCtx.textAlign = 'center';
-    sharpCtx.textBaseline = 'middle';
-
-    // Split words from the static list based on threshold vs blurRatio
-    for (const w of this.staticBlurWords) {
-      const x = w.rx * texW;
-      const y = w.ry * texH;
-      if (w.threshold <= blurRatio) {
-        crispCtx.fillText(w.word, x, y);
-      } else {
-        sharpCtx.fillText(w.word, x, y);
-      }
-    }
-
-    // Step 3: Combine them: blur the crispCanvas and draw it, then draw sharpCanvas
-    const combinedCanvas = document.createElement('canvas');
-    combinedCanvas.width = texW;
-    combinedCanvas.height = texH;
-    const combinedCtx = combinedCanvas.getContext('2d')!;
-
-    const blurCanvas = document.createElement('canvas');
-    blurCanvas.width = texW;
-    blurCanvas.height = texH;
-    const blurCtx = blurCanvas.getContext('2d')!;
-    blurCtx.filter = `blur(${blurAmount}px)`;
-    blurCtx.drawImage(crispCanvas, 0, 0);
-
-    // Draw blurred layer
-    combinedCtx.drawImage(blurCanvas, 0, 0);
-    // Draw sharp layer on top
-    combinedCtx.drawImage(sharpCanvas, 0, 0);
-
-    return combinedCanvas;
-  }
-
-  private initStaticBlurWords(): void {
-    const words = [
-      'the', 'women', 'who', 'programmed', 'ENIAC', 'were', 'not', 'recognized',
-      'for', 'their', 'contributions', 'to', 'computing', 'history', 'until',
-      'decades', 'later', 'Kay', 'Jean', 'Betty', 'Marlyn', 'Fran', 'Ruth',
-      'programmers', 'invisible', 'pioneers', 'code', 'debug', 'memory',
-      'accumulator', 'subroutine', 'ballistics', 'trajectory', 'tables',
-      'a', 'n', 'o', 't', 'e', 'r', 'm', 'w', 'b', 'h', 'd', 'g', 'y',
-      'compute', 'calculate', 'loops', 'function', 'mathematics',
-    ];
-
-    this.staticBlurWords = [];
-    // Initialize seed-based pseudo random generator
-    let seed = 12345;
-    const random = () => {
-      const x = Math.sin(seed++) * 10000;
-      return x - Math.floor(x);
-    };
-
-    for (let i = 0; i < 100; i++) {
-      this.staticBlurWords.push({
-        rx: random(),
-        ry: random(),
-        word: words[Math.floor(random() * words.length)],
-        threshold: random(),
-      });
-    }
-  }
-
-  // ─── TEAMWORK: Floating Connected Circles ────────────────────────────
-  private drawConnectedCircles(ctx: CanvasRenderingContext2D, width: number, height: number, _timestamp: number): void {
-    ctx.fillStyle = this.config.backgroundColor;
-    ctx.fillRect(0, 0, width, height);
-
-    const circleRadius = Math.max(3, Math.round(3 + (this.config.pot0 / 1023) * 25));
-    const speedVal = 0.3 + (this.config.pot1 / 1023) * 3;
-    const count = Math.max(5, Math.round(5 + (this.config.pot2 / 1023) * 40));
-    const lineDistance = Math.max(30, Math.round(30 + (this.config.pot3 / 1023) * 300));
-
-    // Init or resize circles pool
-    if (this.circles.length !== count || this.circlesInitCount !== count) {
-      this.initCircles(count, width, height);
-      this.circlesInitCount = count;
-    }
-
-    const dt = 0.016 * speedVal;
-
-    // Update positions
-    for (const c of this.circles) {
-      c.x += c.vx * dt;
-      c.y += c.vy * dt;
-
-      // Bounce off edges
-      if (c.x < circleRadius) { c.x = circleRadius; c.vx = Math.abs(c.vx); }
-      if (c.x > width - circleRadius) { c.x = width - circleRadius; c.vx = -Math.abs(c.vx); }
-      if (c.y < circleRadius) { c.y = circleRadius; c.vy = Math.abs(c.vy); }
-      if (c.y > height - circleRadius) { c.y = height - circleRadius; c.vy = -Math.abs(c.vy); }
-    }
-
-    // Draw connecting lines for circles within lineDistance
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < this.circles.length; i++) {
-      for (let j = i + 1; j < this.circles.length; j++) {
-        const dx = this.circles[i].x - this.circles[j].x;
-        const dy = this.circles[i].y - this.circles[j].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < lineDistance) {
-          const opacity = 0.4 * (1 - dist / lineDistance);
-          ctx.strokeStyle = `rgba(0, 0, 0, ${opacity})`;
-          ctx.beginPath();
-          ctx.moveTo(this.circles[i].x, this.circles[i].y);
-          ctx.lineTo(this.circles[j].x, this.circles[j].y);
-          ctx.stroke();
-        }
-      }
-    }
-
-    // Draw circles
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    for (const c of this.circles) {
-      ctx.beginPath();
-      ctx.arc(c.x, c.y, circleRadius, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  private initCircles(count: number, width: number, height: number): void {
-    this.circles = [];
-    for (let i = 0; i < count; i++) {
-      this.circles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 60,
-        vy: (Math.random() - 0.5) * 60,
-        radius: 5 + Math.random() * 10,
-      });
-    }
-  }
 
   public destroy(): void {
     if (this.animationId) {
