@@ -64,6 +64,7 @@ export class RecognitionAnimator implements ThemeAnimator {
     if (!blurCtx) return;
 
     const font = `bold ${this.computedFontSize}px "Space Grotesk", sans-serif`;
+    const letterSpacing = '-0.04em';
 
     // Configure text parameters
     const baseAlpha = 0.85; // Sharp layer stays normal and constant
@@ -76,15 +77,17 @@ export class RecognitionAnimator implements ThemeAnimator {
       blurFade = Math.max(0, 1 - (blurVal - 0.3) / 2);
     }
 
-    // Configure blur canvas context (transparent background, hardware blurred by CSS filter on the canvas element)
+    // Configure blur canvas context
     blurCtx.save();
     blurCtx.font = font;
-    blurCtx.textBaseline = 'alphabetic';
+    blurCtx.letterSpacing = letterSpacing;
+    blurCtx.textBaseline = 'top';
 
     // Configure sharp canvas context
     ctx.save();
     ctx.font = font;
-    ctx.textBaseline = 'alphabetic';
+    ctx.letterSpacing = letterSpacing;
+    ctx.textBaseline = 'top';
 
     // Calculate transition window width (smooth peak at 0.3, 0 at boundaries)
     const w = 0.3 * Math.sin(targetDensity * Math.PI);
@@ -118,7 +121,7 @@ export class RecognitionAnimator implements ThemeAnimator {
         for (let r = 0; r < blurRepeats; r++) {
           blurCtx.fillText(ch.char, ch.x, ch.y);
         }
-
+        
         if (blurStrokeWidth > 0) {
           blurCtx.strokeStyle = `rgba(0, 0, 0, ${currentBlurOpacity})`;
           blurCtx.lineWidth = blurStrokeWidth;
@@ -145,26 +148,28 @@ export class RecognitionAnimator implements ThemeAnimator {
    * Each character gets a deterministic threshold for blur assignment.
    */
   private computeLayout(width: number, height: number): void {
-    const marginX = Math.round(width * 0.08);
-    const marginY = Math.round(height * 0.06);
-    const availWidth = width - marginX * 2;
-    const availHeight = height - marginY * 2;
+    const marginX = 0;
+    const marginY = 0;
+    const availWidth = width;
+    const availHeight = height;
+    const letterSpacing = '-0.04em';
 
     // Temporary canvas for text measurement
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = 1;
     tempCanvas.height = 1;
     const tempCtx = tempCanvas.getContext('2d')!;
+    tempCtx.letterSpacing = letterSpacing;
 
     // Binary search for the largest font size that fits the quote in the available area
     let lo = 16;
-    let hi = 200;
+    let hi = 300;
     let bestFontSize = 16;
 
     while (lo <= hi) {
       const mid = Math.floor((lo + hi) / 2);
       tempCtx.font = `bold ${mid}px "Space Grotesk", sans-serif`;
-      const lineHeight = Math.round(mid * 1.35);
+      const lineHeight = Math.round(mid * 1.12); // tight line height
       const lines = this.wrapText(tempCtx, QUOTE, availWidth);
       const totalHeight = lines.length * lineHeight;
 
@@ -177,13 +182,13 @@ export class RecognitionAnimator implements ThemeAnimator {
     }
 
     this.computedFontSize = bestFontSize;
-    const lineHeight = Math.round(bestFontSize * 1.35);
+    const lineHeight = Math.round(bestFontSize * 1.12);
     const font = `bold ${bestFontSize}px "Space Grotesk", sans-serif`;
     tempCtx.font = font;
 
     const lines = this.wrapText(tempCtx, QUOTE, availWidth);
     const totalHeight = lines.length * lineHeight;
-    const startY = marginY + (availHeight - totalHeight) / 2 + bestFontSize;
+    const startY = marginY + (availHeight - totalHeight) / 2;
 
     // Deterministic pseudo-random threshold per character
     let seed = 42;
