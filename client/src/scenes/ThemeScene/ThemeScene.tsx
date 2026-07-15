@@ -8,9 +8,9 @@ import './ThemeScene.css';
 // Pot label config per theme
 const THEME_POT_LABELS: Record<string, [string, string, string, string]> = {
   programming: ['SCALE', 'SPEED', 'CONTRAST', 'AMPLITUDE'],
-  pioneering:  ['RASTER', 'SPEED', 'DOT SIZE', 'CONTRAST'],
+  pioneering: ['RASTER', 'SPEED', 'DOT SIZE', 'CONTRAST'],
   recognition: ['DENSITY', 'SPEED', 'BLUR', 'ALPHA'],
-  teamwork:    ['SIZE', 'SPEED', 'COUNT', 'LINE DIST'],
+  teamwork: ['SIZE', 'SPEED', 'COUNT', 'LINE DIST'],
 };
 
 export function ThemeScene() {
@@ -43,7 +43,7 @@ export function ThemeScene() {
           const selectProgrammer = useAppStore.getState().selectProgrammer;
           const setActiveColor = useAppStore.getState().setActiveColor;
           const currentProgKey = useAppStore.getState().selectedProgrammer;
-          
+
           if (currentProgKey !== activeProgKey) {
             selectProgrammer(activeProgKey);
             const prog = PROGRAMMERS[activeProgKey];

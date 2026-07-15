@@ -43,7 +43,8 @@ export class RecognitionAnimator implements ThemeAnimator {
     // Read pots
     const targetDensity = config.pot0 / 1023; // DENSITY (ratio of blurred vs sharp)
     const speedVal = 0.05 + (config.pot1 / 1023) * 5; // SPEED of shift transition
-    const alpha = 0.08 + (config.pot3 / 1023) * 0.92; // ALPHA (opacity of all characters)
+    const blurVal = config.pot2 / 1023; // BLUR level (0 to 1)
+    const pot3Val = config.pot3 / 1023; // ALPHA (pot3 controls thickness/boldness of blurred layer only)
 
     // Update the shifting time phase smoothly using dt
     const dt = 0.016; // ~16ms per frame
@@ -63,6 +64,17 @@ export class RecognitionAnimator implements ThemeAnimator {
     if (!blurCtx) return;
 
     const font = `bold ${this.computedFontSize}px "Space Grotesk", sans-serif`;
+
+    // Configure text parameters
+    const baseAlpha = 0.85; // Sharp layer stays normal and constant
+    const blurStrokeWidth = pot3Val * (this.computedFontSize * 0.25); // Thick stroke on blurred layer only
+    const blurRepeats = 1 + Math.round(pot3Val * 3); // 1 to 4 repeats to make the blurred layer super dark
+
+    // Calculate a fade factor for the blurred canvas: as blur goes high, it smoothly vanishes
+    let blurFade = 1.0;
+    if (blurVal > 0.3) {
+      blurFade = Math.max(0, 1 - (blurVal - 0.3) / 0.6);
+    }
 
     // Configure blur canvas context (transparent background, hardware blurred by CSS filter on the canvas element)
     blurCtx.save();
@@ -99,15 +111,27 @@ export class RecognitionAnimator implements ThemeAnimator {
         }
       }
 
-      // Draw to blurred layer if t > 0
-      if (t > 0) {
-        blurCtx.fillStyle = `rgba(0, 0, 0, ${t * alpha})`;
-        blurCtx.fillText(ch.char, ch.x, ch.y);
+      // Draw to blurred layer if t > 0 and blur has not completely faded out
+      const currentBlurOpacity = t * baseAlpha * blurFade;
+      if (currentBlurOpacity > 0.01) {
+        blurCtx.fillStyle = `rgba(0, 0, 0, ${currentBlurOpacity})`;
+        for (let r = 0; r < blurRepeats; r++) {
+          blurCtx.fillText(ch.char, ch.x, ch.y);
+        }
+        
+        if (blurStrokeWidth > 0) {
+          blurCtx.strokeStyle = `rgba(0, 0, 0, ${currentBlurOpacity})`;
+          blurCtx.lineWidth = blurStrokeWidth;
+          blurCtx.lineJoin = 'round';
+          for (let r = 0; r < blurRepeats; r++) {
+            blurCtx.strokeText(ch.char, ch.x, ch.y);
+          }
+        }
       }
 
-      // Draw to sharp layer if t < 1
+      // Draw to sharp layer if t < 1 (always normal, constant weight and opacity)
       if (t < 1) {
-        ctx.fillStyle = `rgba(0, 0, 0, ${(1 - t) * alpha})`;
+        ctx.fillStyle = `rgba(0, 0, 0, ${(1 - t) * baseAlpha})`;
         ctx.fillText(ch.char, ch.x, ch.y);
       }
     }
