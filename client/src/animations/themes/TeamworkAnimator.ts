@@ -15,6 +15,7 @@ export class TeamworkAnimator implements ThemeAnimator {
 
   public draw(
     ctx: CanvasRenderingContext2D,
+    _blurCtx: CanvasRenderingContext2D | null,
     width: number,
     height: number,
     _timestamp: number,

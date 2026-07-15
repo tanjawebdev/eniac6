@@ -31,12 +31,9 @@ export class RecognitionAnimator implements ThemeAnimator {
   private computedFontSize = 40;
   private timePhase = 0;
 
-  // Offscreen downscaled canvas for fast real-time blur filter
-  private blurCanvas: HTMLCanvasElement | null = null;
-  private blurCtx: CanvasRenderingContext2D | null = null;
-
   public draw(
     ctx: CanvasRenderingContext2D,
+    blurCtx: CanvasRenderingContext2D | null,
     width: number,
     height: number,
     _timestamp: number,
@@ -45,11 +42,10 @@ export class RecognitionAnimator implements ThemeAnimator {
   ): void {
     // Read pots
     const targetDensity = config.pot0 / 1023; // DENSITY (ratio of blurred vs sharp)
-    const speedVal = 0.05 + (config.pot1 / 1023) * 1.5; // SPEED of shift transition
-    const blurAmount = Math.max(1, Math.round(1 + (config.pot2 / 1023) * 25)); // BLUR radius
+    const speedVal = 0.05 + (config.pot1 / 1023) * 5; // SPEED of shift transition
     const alpha = 0.08 + (config.pot3 / 1023) * 0.92; // ALPHA (opacity of all characters)
 
-    // Update the shifting time phase
+    // Update the shifting time phase smoothly using dt
     const dt = 0.016; // ~16ms per frame
     this.timePhase += dt * speedVal;
 
@@ -60,60 +56,63 @@ export class RecognitionAnimator implements ThemeAnimator {
       this.layoutKey = newLayoutKey;
     }
 
-    // Set up offscreen blur canvas at 1/4 size
-    const blurW = Math.ceil(width / 4);
-    const blurH = Math.ceil(height / 4);
-    if (!this.blurCanvas || this.blurCanvas.width !== blurW || this.blurCanvas.height !== blurH) {
-      this.blurCanvas = document.createElement('canvas');
-      this.blurCanvas.width = blurW;
-      this.blurCanvas.height = blurH;
-      this.blurCtx = this.blurCanvas.getContext('2d');
-    }
-
-    // Clear background
+    // Clear background of the sharp canvas
     ctx.fillStyle = config.backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
-    if (!this.blurCtx || !this.blurCanvas) return;
-
-    // Clear blur canvas
-    this.blurCtx.clearRect(0, 0, blurW, blurH);
+    if (!blurCtx) return;
 
     const font = `bold ${this.computedFontSize}px "Space Grotesk", sans-serif`;
 
-    // Draw blurred characters layer
-    this.blurCtx.save();
-    // Scale blurAmount down by 4 since the canvas is 1/4 size
-    this.blurCtx.filter = `blur(${Math.max(0.5, blurAmount / 4)}px)`;
-    this.blurCtx.scale(0.25, 0.25);
-    this.blurCtx.font = font;
-    this.blurCtx.fillStyle = '#000000';
-    this.blurCtx.textBaseline = 'alphabetic';
+    // Configure blur canvas context (transparent background, hardware blurred by CSS filter on the canvas element)
+    blurCtx.save();
+    blurCtx.font = font;
+    blurCtx.textBaseline = 'alphabetic';
 
-    // Draw sharp characters directly to main context
+    // Configure sharp canvas context
     ctx.save();
-    ctx.globalAlpha = alpha;
     ctx.font = font;
-    ctx.fillStyle = '#000000';
     ctx.textBaseline = 'alphabetic';
+
+    // Calculate transition window width (smooth peak at 0.3, 0 at boundaries)
+    const w = 0.3 * Math.sin(targetDensity * Math.PI);
 
     for (const ch of this.charLayouts) {
       if (ch.char === ' ') continue;
 
-      // Shift character threshold over time phase
-      const currentVal = (ch.threshold + this.timePhase) % 1;
+      // Use a sine wave to oscillate the character threshold smoothly with NO modulo jumps
+      const currentVal = 0.5 + 0.5 * Math.sin(ch.threshold * Math.PI * 2 + this.timePhase);
 
-      if (currentVal <= targetDensity) {
-        this.blurCtx.fillText(ch.char, ch.x, ch.y);
+      // Calculate blur factor 't' (0 = fully sharp, 1 = fully blurred)
+      let t = 0;
+      if (w <= 0.001) {
+        t = currentVal <= targetDensity ? 1 : 0;
       } else {
+        const start = targetDensity - w / 2;
+        const end = targetDensity + w / 2;
+        if (currentVal <= start) {
+          t = 1;
+        } else if (currentVal >= end) {
+          t = 0;
+        } else {
+          t = 1 - (currentVal - start) / w;
+        }
+      }
+
+      // Draw to blurred layer if t > 0
+      if (t > 0) {
+        blurCtx.fillStyle = `rgba(0, 0, 0, ${t * alpha})`;
+        blurCtx.fillText(ch.char, ch.x, ch.y);
+      }
+
+      // Draw to sharp layer if t < 1
+      if (t < 1) {
+        ctx.fillStyle = `rgba(0, 0, 0, ${(1 - t) * alpha})`;
         ctx.fillText(ch.char, ch.x, ch.y);
       }
     }
 
-    this.blurCtx.restore();
-
-    // Composite the blurred canvas scaled up
-    ctx.drawImage(this.blurCanvas, 0, 0, width, height);
+    blurCtx.restore();
     ctx.restore();
   }
 

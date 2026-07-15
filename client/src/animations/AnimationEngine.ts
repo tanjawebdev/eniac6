@@ -30,6 +30,10 @@ export class AnimationEngine {
   private width = 0;
   private height = 0;
 
+  // Secondary DOM canvas layer for GPU-accelerated CSS blurring
+  private blurCanvas: HTMLCanvasElement | null = null;
+  private blurCtx: CanvasRenderingContext2D | null = null;
+
   // Theme-specific delegate animators
   private animators: Record<string, ThemeAnimator> = {
     programming: new ProgrammingAnimator(),
@@ -71,6 +75,19 @@ export class AnimationEngine {
     }
     this.ctx = context;
 
+    // Create secondary DOM canvas for GPU-accelerated CSS blurring (Recognition theme)
+    this.blurCanvas = document.createElement('canvas');
+    this.blurCanvas.className = 'canvas-background-blur-layer';
+    this.blurCanvas.style.position = 'absolute';
+    this.blurCanvas.style.inset = '0';
+    this.blurCanvas.style.width = '100%';
+    this.blurCanvas.style.height = '100%';
+    this.blurCanvas.style.pointerEvents = 'none';
+    this.blurCanvas.style.zIndex = '1';
+    this.blurCanvas.style.display = 'none';
+    this.canvas.parentNode?.insertBefore(this.blurCanvas, this.canvas.nextSibling);
+    this.blurCtx = this.blurCanvas.getContext('2d');
+
     // Handle resizing
     this.resize();
     window.addEventListener('resize', this.handleResize);
@@ -94,6 +111,14 @@ export class AnimationEngine {
     this.ctx.scale(dpr, dpr);
     this.width = rect.width;
     this.height = rect.height;
+
+    if (this.blurCanvas) {
+      this.blurCanvas.width = rect.width * dpr;
+      this.blurCanvas.height = rect.height * dpr;
+      if (this.blurCtx) {
+        this.blurCtx.scale(dpr, dpr);
+      }
+    }
   }
 
   public setConfig(key: keyof EngineConfig, value: any): void {
@@ -162,8 +187,24 @@ export class AnimationEngine {
 
     // Route to theme-specific delegate animators if one is active
     if (config.activeTheme && this.animators[config.activeTheme]) {
+      if (config.activeTheme === 'recognition') {
+        if (this.blurCanvas) {
+          this.blurCanvas.style.display = 'block';
+          const blurAmount = Math.max(1, Math.round(1 + (config.pot2 / 1023) * 25));
+          this.blurCanvas.style.filter = `blur(${blurAmount}px)`;
+          if (this.blurCtx) {
+            this.blurCtx.clearRect(0, 0, this.width, this.height);
+          }
+        }
+      } else {
+        if (this.blurCanvas) {
+          this.blurCanvas.style.display = 'none';
+        }
+      }
+
       this.animators[config.activeTheme].draw(
         ctx,
+        this.blurCtx,
         width,
         height,
         timestamp || performance.now(),
@@ -171,6 +212,10 @@ export class AnimationEngine {
         this.startTime
       );
       return;
+    } else {
+      if (this.blurCanvas) {
+        this.blurCanvas.style.display = 'none';
+      }
     }
 
     if (config.allInserted) {
@@ -240,5 +285,8 @@ export class AnimationEngine {
       cancelAnimationFrame(this.animationId);
     }
     window.removeEventListener('resize', this.handleResize);
+    if (this.blurCanvas && this.blurCanvas.parentNode) {
+      this.blurCanvas.parentNode.removeChild(this.blurCanvas);
+    }
   }
 }
