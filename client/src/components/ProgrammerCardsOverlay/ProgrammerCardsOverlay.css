@@ -74,3 +74,28 @@
     box-shadow: 0 0 20px 0 var(--accent-color) inset;
   }
 }
+
+/* Programming Theme Mode overrides (black outline or solid black background) */
+.programmer-cards-overlay.programming-theme-mode .overlay-programmer-card {
+  border: 3px solid #000000;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+.programmer-cards-overlay.programming-theme-mode .overlay-programmer-card span {
+  color: #000000;
+}
+
+.programmer-cards-overlay.programming-theme-mode .overlay-programmer-card.inserted {
+  border-color: #000000;
+  background: #000000;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+.programmer-cards-overlay.programming-theme-mode .overlay-programmer-card.inserted span {
+  color: #ffffff;
+}

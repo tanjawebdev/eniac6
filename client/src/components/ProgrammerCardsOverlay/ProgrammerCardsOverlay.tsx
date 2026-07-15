@@ -8,6 +8,7 @@ import { type ProgrammerKey } from '@shared/constants';
 
 export function ProgrammerCardsOverlay() {
   const currentScene = useAppStore((state) => state.currentScene);
+  const selectedTheme = useAppStore((state) => state.selectedTheme);
   const nfcStates = useHardwareStore((state) => state.nfc);
 
   // Only show cards overlay in home and theme scenes
@@ -34,8 +35,10 @@ export function ProgrammerCardsOverlay() {
     }
   };
 
+  const isThemeActive = currentScene === 'theme' && !!selectedTheme;
+
   return (
-    <div className="programmer-cards-overlay">
+    <div className={`programmer-cards-overlay ${isThemeActive ? 'programming-theme-mode' : ''}`}>
       {PROGRAMMER_LIST.map((prog) => {
         const isNfcIn = nfcStates.some((n) => n.present && n.uid === prog.uid);
         const pos = CARD_POSITIONS[prog.key];

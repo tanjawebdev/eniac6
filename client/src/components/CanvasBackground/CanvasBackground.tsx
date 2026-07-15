@@ -3,6 +3,7 @@ import { useHardwareStore } from '../../stores/hardwareStore';
 import { useAppStore } from '../../stores/appStore';
 import { AnimationEngine } from '../../animations/AnimationEngine';
 import { THEME_POT_MAPPING } from '@shared/constants';
+import { PROGRAMMERS } from '../../data/programmers';
 import './CanvasBackground.css';
 
 export function CanvasBackground() {
@@ -16,13 +17,24 @@ export function CanvasBackground() {
   const pots = useHardwareStore((state) => state.pots);
   const nfc = useHardwareStore((state) => state.nfc);
 
+  const selectedProgrammerKey = useAppStore((state) => state.selectedProgrammer);
+  const selectedProgrammer = selectedProgrammerKey ? PROGRAMMERS[selectedProgrammerKey] : null;
+
   // Check if all NFC readers are occupied (only active in home or intro scenes)
   const allInserted =
     (currentScene === 'home' || currentScene === 'intro') &&
     nfc.length === 6 &&
     nfc.every((n) => n.present && n.uid);
 
-  const backgroundColor = currentScene === 'home' && !allInserted ? '#191815' : '#0a0a0a';
+  const getBackgroundColor = () => {
+    if (selectedTheme && selectedProgrammer) {
+      return selectedProgrammer.colorDark;
+    }
+    if (currentScene === 'home' && !allInserted) return '#191815';
+    return '#0a0a0a';
+  };
+
+  const backgroundColor = getBackgroundColor();
 
   // Choose which shape to draw based on current scene or selected theme
   // Default is circle. Programming could draw squares, recognition triangles, etc.
@@ -87,6 +99,20 @@ export function CanvasBackground() {
 
   const params = getParams();
 
+  // Read raw pots for the active theme
+  let pot0 = 307;
+  let pot1 = 102;
+  let pot2 = 716;
+  let pot3 = 921;
+
+  if (selectedTheme && THEME_POT_MAPPING[selectedTheme]) {
+    const { potStart } = THEME_POT_MAPPING[selectedTheme];
+    pot0 = pots[potStart] ?? 307;
+    pot1 = pots[potStart + 1] ?? 102;
+    pot2 = pots[potStart + 2] ?? 716;
+    pot3 = pots[potStart + 3] ?? 921;
+  }
+
   // Instantiate animation engine on mount
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -113,7 +139,12 @@ export function CanvasBackground() {
     engine.setConfig('rotate', params.rotate);
     engine.setConfig('allInserted', allInserted);
     engine.setConfig('backgroundColor', backgroundColor);
-  }, [activeColor, activeShape, params.speed, params.size, params.amount, params.rotate, allInserted, backgroundColor]);
+    engine.setConfig('activeTheme', selectedTheme);
+    engine.setConfig('pot0', pot0);
+    engine.setConfig('pot1', pot1);
+    engine.setConfig('pot2', pot2);
+    engine.setConfig('pot3', pot3);
+  }, [activeColor, activeShape, params.speed, params.size, params.amount, params.rotate, allInserted, backgroundColor, selectedTheme, pot0, pot1, pot2, pot3]);
 
   return <canvas ref={canvasRef} className="canvas-background" />;
 }

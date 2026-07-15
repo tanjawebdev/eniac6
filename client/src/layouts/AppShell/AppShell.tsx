@@ -6,12 +6,15 @@ import { GlobalOverlay } from '../../components/GlobalOverlay/GlobalOverlay';
 import { Hud } from '../../components/Hud/Hud';
 import { DebugOverlay } from '../../components/DebugOverlay/DebugOverlay';
 import { ProgrammerCardsOverlay } from '../../components/ProgrammerCardsOverlay/ProgrammerCardsOverlay';
+import { PROGRAMMERS } from '../../data/programmers';
 import './AppShell.css';
 
 export function AppShell() {
   const debugVisible = useAppStore((state) => state.debugVisible);
   const devScale = useAppStore((state) => state.devScale);
   const activeColor = useAppStore((state) => state.activeColor);
+  const selectedTheme = useAppStore((state) => state.selectedTheme);
+  const selectedProgKey = useAppStore((state) => state.selectedProgrammer);
   const [scale, setScale] = useState(1);
 
   // Dynamic scale calculation to fit portrait 4K screen (2160x3840) on developer screens
@@ -44,6 +47,18 @@ export function AppShell() {
     const b = parseInt(hex.substring(4, 6), 16);
     document.documentElement.style.setProperty('--accent-glow', `rgba(${r}, ${g}, ${b}, 0.25)`);
   }, [activeColor]);
+
+  // Set background color property dynamically when any theme is active
+  useEffect(() => {
+    if (selectedTheme && selectedProgKey) {
+      const prog = PROGRAMMERS[selectedProgKey];
+      if (prog) {
+        document.documentElement.style.setProperty('--bg-primary', prog.colorDark);
+        return;
+      }
+    }
+    document.documentElement.style.setProperty('--bg-primary', '#0a0a0a');
+  }, [selectedTheme, selectedProgKey]);
 
   const shellStyle: React.CSSProperties = devScale
     ? {

@@ -3,10 +3,13 @@ import { CanvasBackground } from '../../components/CanvasBackground/CanvasBackgr
 import { GlobalOverlay } from '../../components/GlobalOverlay/GlobalOverlay';
 import { DebugOverlay } from '../../components/DebugOverlay/DebugOverlay';
 import { useAppStore } from '../../stores/appStore';
+import { PROGRAMMERS } from '../../data/programmers';
 import './DebugPage.css';
 
 export function DebugPage() {
   const activeColor = useAppStore((state) => state.activeColor);
+  const selectedTheme = useAppStore((state) => state.selectedTheme);
+  const selectedProgKey = useAppStore((state) => state.selectedProgrammer);
 
   // Set css custom property for dynamic color changes (similar to AppShell.tsx)
   useEffect(() => {
@@ -19,6 +22,18 @@ export function DebugPage() {
     const b = parseInt(hex.substring(4, 6), 16);
     document.documentElement.style.setProperty('--accent-glow', `rgba(${r}, ${g}, ${b}, 0.25)`);
   }, [activeColor]);
+
+  // Set background color property dynamically when any theme is active
+  useEffect(() => {
+    if (selectedTheme && selectedProgKey) {
+      const prog = PROGRAMMERS[selectedProgKey];
+      if (prog) {
+        document.documentElement.style.setProperty('--bg-primary', prog.colorDark);
+        return;
+      }
+    }
+    document.documentElement.style.setProperty('--bg-primary', '#0a0a0a');
+  }, [selectedTheme, selectedProgKey]);
 
   return (
     <div className="debug-page-container">
