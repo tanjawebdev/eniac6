@@ -26,12 +26,14 @@ const QUOTE =
   'to say, "I was there." We had tamed a mechanical beast and made it purr.';
 
 export class RecognitionAnimator implements ThemeAnimator {
-  private texture: HTMLCanvasElement | null = null;
-  private textureKey = '';
   private charLayouts: CharLayout[] = [];
   private layoutKey = '';
   private computedFontSize = 40;
-  private animatedDensity = 0;
+  private timePhase = 0;
+
+  // Offscreen downscaled canvas for fast real-time blur filter
+  private blurCanvas: HTMLCanvasElement | null = null;
+  private blurCtx: CanvasRenderingContext2D | null = null;
 
   public draw(
     ctx: CanvasRenderingContext2D,
@@ -42,18 +44,14 @@ export class RecognitionAnimator implements ThemeAnimator {
     _startTime: number
   ): void {
     // Read pots
-    const targetDensity = config.pot0 / 1023;
-    const speed = 0.005 + (config.pot1 / 1023) * 0.15;
-    const blurAmount = Math.max(1, Math.round(1 + (config.pot2 / 1023) * 25));
-    const alpha = 0.08 + (config.pot3 / 1023) * 0.92;
+    const targetDensity = config.pot0 / 1023; // DENSITY (ratio of blurred vs sharp)
+    const speedVal = 0.05 + (config.pot1 / 1023) * 1.5; // SPEED of shift transition
+    const blurAmount = Math.max(1, Math.round(1 + (config.pot2 / 1023) * 25)); // BLUR radius
+    const alpha = 0.08 + (config.pot3 / 1023) * 0.92; // ALPHA (opacity of all characters)
 
-    // Animate density toward target (speed controls transition rate)
-    const diff = targetDensity - this.animatedDensity;
-    if (Math.abs(diff) > 0.001) {
-      this.animatedDensity += diff * speed;
-    } else {
-      this.animatedDensity = targetDensity;
-    }
+    // Update the shifting time phase
+    const dt = 0.016; // ~16ms per frame
+    this.timePhase += dt * speedVal;
 
     // Recompute character layout if canvas dimensions changed
     const newLayoutKey = `${width}_${height}`;
@@ -62,25 +60,61 @@ export class RecognitionAnimator implements ThemeAnimator {
       this.layoutKey = newLayoutKey;
     }
 
-    // Quantize animated density to avoid rebuilding texture every single frame
-    const quantizedDensity = Math.round(this.animatedDensity * 200) / 200;
-    const texKey = `${quantizedDensity}_${blurAmount}_${width}_${height}`;
-
-    if (this.textureKey !== texKey) {
-      this.texture = this.renderTexture(width, height, quantizedDensity, blurAmount);
-      this.textureKey = texKey;
+    // Set up offscreen blur canvas at 1/4 size
+    const blurW = Math.ceil(width / 4);
+    const blurH = Math.ceil(height / 4);
+    if (!this.blurCanvas || this.blurCanvas.width !== blurW || this.blurCanvas.height !== blurH) {
+      this.blurCanvas = document.createElement('canvas');
+      this.blurCanvas.width = blurW;
+      this.blurCanvas.height = blurH;
+      this.blurCtx = this.blurCanvas.getContext('2d');
     }
 
-    // Draw background
+    // Clear background
     ctx.fillStyle = config.backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
-    // Draw the composited text texture with alpha
-    if (this.texture) {
-      ctx.globalAlpha = alpha;
-      ctx.drawImage(this.texture, 0, 0);
-      ctx.globalAlpha = 1;
+    if (!this.blurCtx || !this.blurCanvas) return;
+
+    // Clear blur canvas
+    this.blurCtx.clearRect(0, 0, blurW, blurH);
+
+    const font = `bold ${this.computedFontSize}px "Space Grotesk", sans-serif`;
+
+    // Draw blurred characters layer
+    this.blurCtx.save();
+    // Scale blurAmount down by 4 since the canvas is 1/4 size
+    this.blurCtx.filter = `blur(${Math.max(0.5, blurAmount / 4)}px)`;
+    this.blurCtx.scale(0.25, 0.25);
+    this.blurCtx.font = font;
+    this.blurCtx.fillStyle = '#000000';
+    this.blurCtx.textBaseline = 'alphabetic';
+
+    // Draw sharp characters directly to main context
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = font;
+    ctx.fillStyle = '#000000';
+    ctx.textBaseline = 'alphabetic';
+
+    for (const ch of this.charLayouts) {
+      if (ch.char === ' ') continue;
+
+      // Shift character threshold over time phase
+      const currentVal = (ch.threshold + this.timePhase) % 1;
+
+      if (currentVal <= targetDensity) {
+        this.blurCtx.fillText(ch.char, ch.x, ch.y);
+      } else {
+        ctx.fillText(ch.char, ch.x, ch.y);
+      }
     }
+
+    this.blurCtx.restore();
+
+    // Composite the blurred canvas scaled up
+    ctx.drawImage(this.blurCanvas, 0, 0, width, height);
+    ctx.restore();
   }
 
   /**
@@ -187,64 +221,5 @@ export class RecognitionAnimator implements ThemeAnimator {
     }
 
     return lines;
-  }
-
-  /**
-   * Render the combined sharp + blurred text texture.
-   * Characters with threshold <= density are blurred; the rest stay sharp.
-   */
-  private renderTexture(
-    width: number,
-    height: number,
-    density: number,
-    blurAmount: number
-  ): HTMLCanvasElement {
-    const font = `bold ${this.computedFontSize}px "Space Grotesk", sans-serif`;
-
-    // Canvas for characters that will be blurred
-    const blurSrcCanvas = document.createElement('canvas');
-    blurSrcCanvas.width = width;
-    blurSrcCanvas.height = height;
-    const blurSrcCtx = blurSrcCanvas.getContext('2d')!;
-    blurSrcCtx.fillStyle = '#000000';
-    blurSrcCtx.font = font;
-    blurSrcCtx.textBaseline = 'alphabetic';
-
-    // Canvas for characters that stay sharp
-    const sharpCanvas = document.createElement('canvas');
-    sharpCanvas.width = width;
-    sharpCanvas.height = height;
-    const sharpCtx = sharpCanvas.getContext('2d')!;
-    sharpCtx.fillStyle = '#000000';
-    sharpCtx.font = font;
-    sharpCtx.textBaseline = 'alphabetic';
-
-    // Split characters into blurred vs sharp based on threshold
-    for (const ch of this.charLayouts) {
-      if (ch.char === ' ') continue;
-      if (ch.threshold <= density) {
-        blurSrcCtx.fillText(ch.char, ch.x, ch.y);
-      } else {
-        sharpCtx.fillText(ch.char, ch.x, ch.y);
-      }
-    }
-
-    // Apply blur to the blur source canvas
-    const blurredCanvas = document.createElement('canvas');
-    blurredCanvas.width = width;
-    blurredCanvas.height = height;
-    const blurredCtx = blurredCanvas.getContext('2d')!;
-    blurredCtx.filter = `blur(${blurAmount}px)`;
-    blurredCtx.drawImage(blurSrcCanvas, 0, 0);
-
-    // Combine: blurred layer first, then sharp on top
-    const combined = document.createElement('canvas');
-    combined.width = width;
-    combined.height = height;
-    const combinedCtx = combined.getContext('2d')!;
-    combinedCtx.drawImage(blurredCanvas, 0, 0);
-    combinedCtx.drawImage(sharpCanvas, 0, 0);
-
-    return combined;
   }
 }
