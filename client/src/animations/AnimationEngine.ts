@@ -24,15 +24,6 @@ interface FloatingCircle {
   radius: number;
 }
 
-interface BlurryChar {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  char: string;
-  size: number;
-}
-
 interface Footstep {
   x: number;
   y: number;
@@ -54,9 +45,11 @@ export class AnimationEngine {
   private circles: FloatingCircle[] = [];
   private circlesInitCount = 0;
 
-  // Recognition: blurry text characters
-  private blurChars: BlurryChar[] = [];
-  private blurCharsInitCount = 0;
+  // Recognition: pre-rendered blurry text texture
+  private blurTexture: HTMLCanvasElement | null = null;
+  private blurTextureKey = '';
+  private blurScrollX = 0;
+  private blurScrollY = 0;
 
   // Pioneering: footsteps
   private footsteps: Footstep[] = [];
@@ -469,52 +462,63 @@ export class AnimationEngine {
     }
   }
 
-  // ─── RECOGNITION: Blurry Text ────────────────────────────────────────
+  // ─── RECOGNITION: Blurry Text (Pre-rendered offscreen) ───────────────
   private drawBlurryText(ctx: CanvasRenderingContext2D, width: number, height: number, _timestamp: number): void {
     ctx.fillStyle = this.config.backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
     const blurAmount = Math.max(1, Math.round(1 + (this.config.pot0 / 1023) * 25));
     const speedVal = 0.2 + (this.config.pot1 / 1023) * 2;
-    const density = Math.max(10, Math.round(10 + (this.config.pot2 / 1023) * 80));
+    const density = Math.max(20, Math.round(20 + (this.config.pot2 / 1023) * 120));
     const fontSizeVal = Math.max(14, Math.round(14 + (this.config.pot3 / 1023) * 60));
 
-    // Init or resize blurry chars pool
-    if (this.blurChars.length !== density || this.blurCharsInitCount !== density) {
-      this.initBlurChars(density, width, height);
-      this.blurCharsInitCount = density;
+    // Build a cache key from the parameters that affect the texture
+    const texKey = `${blurAmount}_${density}_${fontSizeVal}_${width}_${height}`;
+
+    // Only re-render the offscreen texture when parameters change
+    if (this.blurTextureKey !== texKey) {
+      this.blurTexture = this.renderBlurTexture(width, height, blurAmount, density, fontSizeVal);
+      this.blurTextureKey = texKey;
     }
 
-    const dt = 0.016 * speedVal;
+    if (!this.blurTexture) return;
 
-    // Update positions
-    for (const ch of this.blurChars) {
-      ch.x += ch.vx * dt;
-      ch.y += ch.vy * dt;
+    // Animate by scrolling the texture
+    this.blurScrollX += speedVal * 0.3;
+    this.blurScrollY += speedVal * 0.15;
 
-      // Wrap around
-      if (ch.x < -100) ch.x = width + 50;
-      if (ch.x > width + 100) ch.x = -50;
-      if (ch.y < -100) ch.y = height + 50;
-      if (ch.y > height + 100) ch.y = -50;
-    }
+    const texW = this.blurTexture.width;
+    const texH = this.blurTexture.height;
 
-    // Draw with blur
-    ctx.save();
-    ctx.filter = `blur(${blurAmount}px)`;
-    ctx.fillStyle = `rgba(0, 0, 0, 0.85)`;
-    ctx.font = `bold ${fontSizeVal}px "Space Grotesk", "IBM Plex Mono", monospace`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    // Tile the texture with wrap-around for seamless scrolling
+    const offsetX = ((this.blurScrollX % texW) + texW) % texW;
+    const offsetY = ((this.blurScrollY % texH) + texH) % texH;
 
-    for (const ch of this.blurChars) {
-      ctx.fillText(ch.char, ch.x, ch.y);
-    }
-
-    ctx.restore();
+    // Draw 4 copies to cover the viewport with seamless wrapping
+    ctx.drawImage(this.blurTexture, -offsetX, -offsetY);
+    ctx.drawImage(this.blurTexture, texW - offsetX, -offsetY);
+    ctx.drawImage(this.blurTexture, -offsetX, texH - offsetY);
+    ctx.drawImage(this.blurTexture, texW - offsetX, texH - offsetY);
   }
 
-  private initBlurChars(count: number, width: number, height: number): void {
+  /**
+   * Render the blurry text texture onto an offscreen canvas ONCE.
+   * This is the expensive operation, but it only runs when pot values change.
+   */
+  private renderBlurTexture(
+    width: number, height: number,
+    blurAmount: number, density: number, fontSize: number
+  ): HTMLCanvasElement {
+    // Make the texture slightly larger than viewport for seamless tiling
+    const texW = Math.ceil(width * 1.5);
+    const texH = Math.ceil(height * 1.5);
+
+    // Step 1: Draw crisp text onto a temp canvas
+    const crispCanvas = document.createElement('canvas');
+    crispCanvas.width = texW;
+    crispCanvas.height = texH;
+    const crispCtx = crispCanvas.getContext('2d')!;
+
     const words = [
       'the', 'women', 'who', 'programmed', 'ENIAC', 'were', 'not', 'recognized',
       'for', 'their', 'contributions', 'to', 'computing', 'history', 'until',
@@ -525,17 +529,28 @@ export class AnimationEngine {
       'compute', 'calculate', 'loops', 'function', 'mathematics',
     ];
 
-    this.blurChars = [];
-    for (let i = 0; i < count; i++) {
-      this.blurChars.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 30,
-        vy: (Math.random() - 0.5) * 20,
-        char: words[Math.floor(Math.random() * words.length)],
-        size: 14 + Math.random() * 30,
-      });
+    crispCtx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    crispCtx.font = `bold ${fontSize}px "Space Grotesk", "IBM Plex Mono", monospace`;
+    crispCtx.textAlign = 'center';
+    crispCtx.textBaseline = 'middle';
+
+    // Scatter text randomly across the texture
+    for (let i = 0; i < density; i++) {
+      const word = words[Math.floor(Math.random() * words.length)];
+      const x = Math.random() * texW;
+      const y = Math.random() * texH;
+      crispCtx.fillText(word, x, y);
     }
+
+    // Step 2: Apply blur by drawing onto the final texture canvas with filter
+    const blurCanvas = document.createElement('canvas');
+    blurCanvas.width = texW;
+    blurCanvas.height = texH;
+    const blurCtx = blurCanvas.getContext('2d')!;
+    blurCtx.filter = `blur(${blurAmount}px)`;
+    blurCtx.drawImage(crispCanvas, 0, 0);
+
+    return blurCanvas;
   }
 
   // ─── TEAMWORK: Floating Connected Circles ────────────────────────────

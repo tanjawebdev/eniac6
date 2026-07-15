@@ -3,7 +3,7 @@
   width: 100%;
   min-height: 100vh;
   overflow-y: auto;
-  background: var(--bg-primary);
+  background: black;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -93,10 +93,13 @@
 
 /* Animations */
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.4;
     transform: scale(0.9);

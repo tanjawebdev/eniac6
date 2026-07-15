@@ -1,6 +1,4 @@
 import { useEffect } from 'react';
-import { CanvasBackground } from '../../components/CanvasBackground/CanvasBackground';
-import { GlobalOverlay } from '../../components/GlobalOverlay/GlobalOverlay';
 import { DebugOverlay } from '../../components/DebugOverlay/DebugOverlay';
 import { useAppStore } from '../../stores/appStore';
 import { PROGRAMMERS } from '../../data/programmers';
@@ -14,7 +12,7 @@ export function DebugPage() {
   // Set css custom property for dynamic color changes (similar to AppShell.tsx)
   useEffect(() => {
     document.documentElement.style.setProperty('--active-color', activeColor);
-    
+
     // Convert hex to rgb for glow
     const hex = activeColor.replace('#', '');
     const r = parseInt(hex.substring(0, 2), 16);
@@ -37,8 +35,6 @@ export function DebugPage() {
 
   return (
     <div className="debug-page-container">
-      {/* Dynamic Visuals in the Background */}
-      <CanvasBackground />
 
       <div className="debug-page-wrapper">
         <header className="debug-page-header">
@@ -60,9 +56,6 @@ export function DebugPage() {
           <span>&copy; {new Date().getFullYear()} ENIAC Six Museum Installation. Emulator console active.</span>
         </footer>
       </div>
-
-      {/* Screen noise and CRT overlay effects */}
-      <GlobalOverlay />
     </div>
   );
 }
