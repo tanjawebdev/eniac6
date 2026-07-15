@@ -50,6 +50,7 @@ export class AnimationEngine {
   private blurTextureKey = '';
   private blurScrollX = 0;
   private blurScrollY = 0;
+  private staticBlurWords: Array<{ rx: number; ry: number; word: string; threshold: number }> = [];
 
   // Pioneering: footsteps
   private footsteps: Footstep[] = [];
@@ -91,6 +92,8 @@ export class AnimationEngine {
       throw new Error('Could not get 2D rendering context');
     }
     this.ctx = context;
+
+    this.initStaticBlurWords();
 
     // Handle resizing
     this.resize();
@@ -467,17 +470,17 @@ export class AnimationEngine {
     ctx.fillStyle = this.config.backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
-    const blurAmount = Math.max(1, Math.round(1 + (this.config.pot0 / 1023) * 25));
-    const speedVal = 0.2 + (this.config.pot1 / 1023) * 2;
-    const density = Math.max(20, Math.round(20 + (this.config.pot2 / 1023) * 120));
-    const fontSizeVal = Math.max(14, Math.round(14 + (this.config.pot3 / 1023) * 60));
+    const blurRatio = this.config.pot0 / 1023; // DENSITY controls what fraction of text is blurred
+    const speedVal = 0.2 + (this.config.pot1 / 1023) * 2; // SPEED controls drift speed
+    const blurAmount = Math.max(1, Math.round(1 + (this.config.pot2 / 1023) * 25)); // BLUR controls blur radius
+    const fontSizeVal = Math.max(14, Math.round(14 + (this.config.pot3 / 1023) * 60)); // FONT SIZE controls font size
 
     // Build a cache key from the parameters that affect the texture
-    const texKey = `${blurAmount}_${density}_${fontSizeVal}_${width}_${height}`;
+    const texKey = `${blurRatio.toFixed(2)}_${blurAmount}_${fontSizeVal}_${width}_${height}`;
 
     // Only re-render the offscreen texture when parameters change
     if (this.blurTextureKey !== texKey) {
-      this.blurTexture = this.renderBlurTexture(width, height, blurAmount, density, fontSizeVal);
+      this.blurTexture = this.renderBlurTexture(width, height, blurRatio, blurAmount, fontSizeVal);
       this.blurTextureKey = texKey;
     }
 
@@ -507,18 +510,67 @@ export class AnimationEngine {
    */
   private renderBlurTexture(
     width: number, height: number,
-    blurAmount: number, density: number, fontSize: number
+    blurRatio: number, blurAmount: number, fontSize: number
   ): HTMLCanvasElement {
     // Make the texture slightly larger than viewport for seamless tiling
     const texW = Math.ceil(width * 1.5);
     const texH = Math.ceil(height * 1.5);
 
-    // Step 1: Draw crisp text onto a temp canvas
+    // Step 1: Draw the crisp text to be blurred
     const crispCanvas = document.createElement('canvas');
     crispCanvas.width = texW;
     crispCanvas.height = texH;
     const crispCtx = crispCanvas.getContext('2d')!;
 
+    crispCtx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    crispCtx.font = `bold ${fontSize}px "Space Grotesk", "IBM Plex Mono", monospace`;
+    crispCtx.textAlign = 'center';
+    crispCtx.textBaseline = 'middle';
+
+    // Step 2: Draw the crisp text that stays sharp
+    const sharpCanvas = document.createElement('canvas');
+    sharpCanvas.width = texW;
+    sharpCanvas.height = texH;
+    const sharpCtx = sharpCanvas.getContext('2d')!;
+
+    sharpCtx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    sharpCtx.font = `bold ${fontSize}px "Space Grotesk", "IBM Plex Mono", monospace`;
+    sharpCtx.textAlign = 'center';
+    sharpCtx.textBaseline = 'middle';
+
+    // Split words from the static list based on threshold vs blurRatio
+    for (const w of this.staticBlurWords) {
+      const x = w.rx * texW;
+      const y = w.ry * texH;
+      if (w.threshold <= blurRatio) {
+        crispCtx.fillText(w.word, x, y);
+      } else {
+        sharpCtx.fillText(w.word, x, y);
+      }
+    }
+
+    // Step 3: Combine them: blur the crispCanvas and draw it, then draw sharpCanvas
+    const combinedCanvas = document.createElement('canvas');
+    combinedCanvas.width = texW;
+    combinedCanvas.height = texH;
+    const combinedCtx = combinedCanvas.getContext('2d')!;
+
+    const blurCanvas = document.createElement('canvas');
+    blurCanvas.width = texW;
+    blurCanvas.height = texH;
+    const blurCtx = blurCanvas.getContext('2d')!;
+    blurCtx.filter = `blur(${blurAmount}px)`;
+    blurCtx.drawImage(crispCanvas, 0, 0);
+
+    // Draw blurred layer
+    combinedCtx.drawImage(blurCanvas, 0, 0);
+    // Draw sharp layer on top
+    combinedCtx.drawImage(sharpCanvas, 0, 0);
+
+    return combinedCanvas;
+  }
+
+  private initStaticBlurWords(): void {
     const words = [
       'the', 'women', 'who', 'programmed', 'ENIAC', 'were', 'not', 'recognized',
       'for', 'their', 'contributions', 'to', 'computing', 'history', 'until',
@@ -529,28 +581,22 @@ export class AnimationEngine {
       'compute', 'calculate', 'loops', 'function', 'mathematics',
     ];
 
-    crispCtx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-    crispCtx.font = `bold ${fontSize}px "Space Grotesk", "IBM Plex Mono", monospace`;
-    crispCtx.textAlign = 'center';
-    crispCtx.textBaseline = 'middle';
+    this.staticBlurWords = [];
+    // Initialize seed-based pseudo random generator
+    let seed = 12345;
+    const random = () => {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    };
 
-    // Scatter text randomly across the texture
-    for (let i = 0; i < density; i++) {
-      const word = words[Math.floor(Math.random() * words.length)];
-      const x = Math.random() * texW;
-      const y = Math.random() * texH;
-      crispCtx.fillText(word, x, y);
+    for (let i = 0; i < 100; i++) {
+      this.staticBlurWords.push({
+        rx: random(),
+        ry: random(),
+        word: words[Math.floor(random() * words.length)],
+        threshold: random(),
+      });
     }
-
-    // Step 2: Apply blur by drawing onto the final texture canvas with filter
-    const blurCanvas = document.createElement('canvas');
-    blurCanvas.width = texW;
-    blurCanvas.height = texH;
-    const blurCtx = blurCanvas.getContext('2d')!;
-    blurCtx.filter = `blur(${blurAmount}px)`;
-    blurCtx.drawImage(crispCanvas, 0, 0);
-
-    return blurCanvas;
   }
 
   // ─── TEAMWORK: Floating Connected Circles ────────────────────────────

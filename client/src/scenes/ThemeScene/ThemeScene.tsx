@@ -9,7 +9,7 @@ import './ThemeScene.css';
 const THEME_POT_LABELS: Record<string, [string, string, string, string]> = {
   programming: ['SCALE', 'SPEED', 'CONTRAST', 'AMPLITUDE'],
   pioneering:  ['RASTER', 'SPEED', 'DOT SIZE', 'CONTRAST'],
-  recognition: ['BLUR', 'SPEED', 'DENSITY', 'FONT SIZE'],
+  recognition: ['DENSITY', 'SPEED', 'BLUR', 'FONT SIZE'],
   teamwork:    ['SIZE', 'SPEED', 'COUNT', 'LINE DIST'],
 };
 
