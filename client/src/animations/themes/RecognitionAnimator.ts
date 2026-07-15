@@ -73,7 +73,7 @@ export class RecognitionAnimator implements ThemeAnimator {
     // Calculate a fade factor for the blurred canvas: as blur goes high, it smoothly vanishes
     let blurFade = 1.0;
     if (blurVal > 0.3) {
-      blurFade = Math.max(0, 1 - (blurVal - 0.3) / 0.6);
+      blurFade = Math.max(0, 1 - (blurVal - 0.3) / 2);
     }
 
     // Configure blur canvas context (transparent background, hardware blurred by CSS filter on the canvas element)
@@ -118,7 +118,7 @@ export class RecognitionAnimator implements ThemeAnimator {
         for (let r = 0; r < blurRepeats; r++) {
           blurCtx.fillText(ch.char, ch.x, ch.y);
         }
-        
+
         if (blurStrokeWidth > 0) {
           blurCtx.strokeStyle = `rgba(0, 0, 0, ${currentBlurOpacity})`;
           blurCtx.lineWidth = blurStrokeWidth;
