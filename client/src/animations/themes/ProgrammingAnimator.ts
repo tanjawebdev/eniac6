@@ -26,11 +26,11 @@ export class ProgrammingAnimator implements ThemeAnimator {
     const gammaVal = config.pot3 / 1023; // GAMMA (mid-tone brightness of video footage)
 
     // Calculate grid and font size based on SCALE
-    const fontSize = Math.max(12, Math.round(14 + scaleVal * 24));
-    const cellWidth = Math.max(10, Math.round(10 + scaleVal * 18));
-    const cellHeight = Math.max(14, Math.round(14 + scaleVal * 26));
+    const fontSize = Math.max(12, Math.round(50 + scaleVal * 24));
+    const cellWidth = Math.max(10, Math.round(30 + scaleVal * 18));
+    const cellHeight = Math.max(14, Math.round(30 + scaleVal * 26));
 
-    ctx.font = `bold ${fontSize}px "IBM Plex Mono", monospace`;
+    ctx.font = `bolder ${fontSize}px "IBM Plex Mono", monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
