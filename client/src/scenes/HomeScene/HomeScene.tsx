@@ -12,7 +12,6 @@ export function HomeScene() {
   const setActiveColor = useAppStore((state) => state.setActiveColor);
 
   // Subscribe to hardware state
-  const nfcStates = useHardwareStore((state) => state.nfc);
   const bananas = useHardwareStore((state) => state.banana);
 
   // 1. Clear selected programmer if no banana plugs are connected (prevent cards from headlining on card inserts)
@@ -53,18 +52,13 @@ export function HomeScene() {
   // Helper positions matching the mockup grid & column indexes
   const SLIDER_POSITIONS = [12, 54, 10, 20, 48.5, 73, 40, 27, 58, 73, 15, 33];
 
-  // Calculate dynamic header inserted count
-  const insertedCount = nfcStates.filter(n => n.present && n.uid).length;
-
   return (
     <div className="home-scene">
       {/* Top Left: Rect */}
       <div className="home-rect-top"></div>
 
-      {/* Top Center: Inserted programmers count */}
-      <div className="home-header-text">
-        {insertedCount}<span className="text-light">/6 </span>programmers inserted
-      </div>
+      {/* Top Center: Inserted programmers count placeholder (persistent header handles layout) */}
+      <div className="home-header-placeholder"></div>
 
       {/* Right-aligned vertically rotated label */}
       <div className="home-vertical-text">

@@ -63,7 +63,7 @@ export class RecognitionAnimator implements ThemeAnimator {
 
     if (!blurCtx) return;
 
-    const font = `bold ${this.computedFontSize}px "Space Grotesk", sans-serif`;
+    const font = `bold ${this.computedFontSize}px "IBM Plex Mono", sans-serif`;
     const letterSpacing = '-0.04em';
 
     // Configure text parameters
@@ -121,7 +121,7 @@ export class RecognitionAnimator implements ThemeAnimator {
         for (let r = 0; r < blurRepeats; r++) {
           blurCtx.fillText(ch.char, ch.x, ch.y);
         }
-        
+
         if (blurStrokeWidth > 0) {
           blurCtx.strokeStyle = `rgba(0, 0, 0, ${currentBlurOpacity})`;
           blurCtx.lineWidth = blurStrokeWidth;
@@ -168,7 +168,7 @@ export class RecognitionAnimator implements ThemeAnimator {
 
     while (lo <= hi) {
       const mid = Math.floor((lo + hi) / 2);
-      tempCtx.font = `bold ${mid}px "Space Grotesk", sans-serif`;
+      tempCtx.font = `bold ${mid}px "IBM Plex Mono", sans-serif`;
       const lineHeight = Math.round(mid * 1.12); // tight line height
       const lines = this.wrapText(tempCtx, QUOTE, availWidth);
       const totalHeight = lines.length * lineHeight;
@@ -183,7 +183,7 @@ export class RecognitionAnimator implements ThemeAnimator {
 
     this.computedFontSize = bestFontSize;
     const lineHeight = Math.round(bestFontSize * 1.12);
-    const font = `bold ${bestFontSize}px "Space Grotesk", sans-serif`;
+    const font = `bold ${bestFontSize}px "IBM Plex Mono", sans-serif`;
     tempCtx.font = font;
 
     const lines = this.wrapText(tempCtx, QUOTE, availWidth);

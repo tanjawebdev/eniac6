@@ -19,7 +19,6 @@ export function ThemeScene() {
 
   const pots = useHardwareStore((state) => state.pots);
   const bananas = useHardwareStore((state) => state.banana);
-  const nfc = useHardwareStore((state) => state.nfc);
 
   // Return to home if banana plug disconnects
   useEffect(() => {
@@ -74,7 +73,6 @@ export function ThemeScene() {
 
   if (!selectedTheme) return null;
 
-  const insertedCount = nfc.filter(n => n.present && n.uid).length;
   const potLabels = THEME_POT_LABELS[selectedTheme] || ['POT 1', 'POT 2', 'POT 3', 'POT 4'];
 
   const pot0Percent = Math.round((p0 / 1023) * 100);
@@ -84,10 +82,6 @@ export function ThemeScene() {
 
   return (
     <div className="theme-scene programming-theme container-full">
-      {/* Top Center: Inserted programmers count */}
-      <div className="home-header-text theme-mode">
-        {insertedCount}<span className="text-light">/6 </span>programmers inserted
-      </div>
 
       {/* Bottom Left: Name of the current theme */}
       <div className="programming-theme-label font-monospace" onClick={goHome}>

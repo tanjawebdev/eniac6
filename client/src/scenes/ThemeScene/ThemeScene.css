@@ -281,15 +281,6 @@
   background: transparent;
 }
 
-.home-header-text.theme-mode {
-  position: absolute;
-  top: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  width: 100%;
-  text-align: center;
-}
 
 .programming-theme-label {
   position: absolute;

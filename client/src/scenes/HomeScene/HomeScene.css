@@ -15,20 +15,9 @@
 }
 
 /* Header & Footer */
-.home-header-text {
-  text-align: center;
-  font-family: var(--font-mono);
-  font-size: 40px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: rgba(255, 255, 255, 0.7);
-  z-index: 10;
-
-  .text-light {
-    opacity: 0.5;
-    ;
-  }
+.home-header-placeholder {
+  height: 48px;
+  visibility: hidden;
 }
 
 .home-rect-top,
