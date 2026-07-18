@@ -72,14 +72,14 @@ export class ProgrammingAnimator implements ThemeAnimator {
       const pixels = imgData.data;
 
       // Character density ramp (lightest to darkest)
-      const chars = '   .,-~:;=!*#$@NM';
+      const chars = '     .,-~:;/=?!*#@1234567890';
       const maxCharIdx = chars.length - 1;
 
       // Calculate Gamma correction exponent (from 0.2 to 4.0)
       const gamma = 0.2 + gammaVal * 3.8;
 
       // Calculate Contrast factor (from 0.0 to 3.0)
-      const contrastFactor = Math.max(0, 1 + (contrastVal - 0.5) * 4);
+      const contrastFactor = Math.max(0, 1.5 + (contrastVal - 0.5) * 3);
 
       ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; // Constant prominent dark alpha for text readability
 
