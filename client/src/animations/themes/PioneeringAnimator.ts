@@ -31,7 +31,7 @@ export class PioneeringAnimator implements ThemeAnimator {
 
     const rasterSize = Math.max(2, Math.round(2 + (config.pot0 / 1023) * 12));
     const speedVal = 0.5 + (config.pot1 / 1023) * 4;
-    const dotSize = Math.max(1, Math.round(1 + (config.pot2 / 1023) * rasterSize * 0.9));
+    const dotSize = Math.max(4, Math.round(1 + (config.pot2 / 1023) * rasterSize * 2));
     const contrastVal = 0.3 + (config.pot3 / 1023) * 0.7;
 
     const dt = 16; // approximate frame time
