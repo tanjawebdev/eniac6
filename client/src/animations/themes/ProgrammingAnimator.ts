@@ -2,59 +2,119 @@ import { EngineConfig } from '../AnimationEngine';
 import { ThemeAnimator } from './ThemeAnimator';
 
 export class ProgrammingAnimator implements ThemeAnimator {
+  private video: HTMLVideoElement | null = null;
+  private videoCanvas: HTMLCanvasElement | null = null;
+  private videoCtx: CanvasRenderingContext2D | null = null;
+
   public draw(
     ctx: CanvasRenderingContext2D,
     _blurCtx: CanvasRenderingContext2D | null,
     width: number,
     height: number,
-    timestamp: number,
+    _timestamp: number,
     config: EngineConfig,
-    startTime: number
+    _startTime: number
   ): void {
+    // Clear background
     ctx.fillStyle = config.backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
-    const scaleVal = config.pot0 / 1023;
-    const speedVal = config.pot1 / 1023;
-    const contrastVal = config.pot2 / 1023;
-    const amplitudeVal = config.pot3 / 1023;
+    // Read potentiometer configurations
+    const scaleVal = config.pot0 / 1023; // SCALE (font/grid size)
+    const speedVal = config.pot1 / 1023; // SPEED (video playback rate)
+    const contrastVal = config.pot2 / 1023; // CONTRAST (of video footage)
+    const gammaVal = config.pot3 / 1023; // GAMMA (mid-tone brightness of video footage)
 
-    const fontSize = Math.max(14, Math.round(15 + scaleVal * 20));
-    const cellWidth = Math.max(12, Math.round(11 + scaleVal * 15));
-    const cellHeight = Math.max(18, Math.round(16 + scaleVal * 22));
+    // Calculate grid and font size based on SCALE
+    const fontSize = Math.max(12, Math.round(14 + scaleVal * 24));
+    const cellWidth = Math.max(10, Math.round(10 + scaleVal * 18));
+    const cellHeight = Math.max(14, Math.round(14 + scaleVal * 26));
 
     ctx.font = `bold ${fontSize}px "IBM Plex Mono", monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const alpha = contrastVal * 0.4 + 0.1;
-    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
-
-    const timeFactor = (timestamp - startTime) * 0.001 * (0.2 + speedVal * 3);
-
-    // Amplitude controls wave displacement (pot3)
-    const amplitude = 5 + amplitudeVal * 40;
-
-    const chars = 'QQQQ R S T U W Z e e * STVX ? @ > < [ ] I I I N N N M M M L L L K K K J J J H H H G G G F F F E E E D D D C C C B B B A A A ';
-
     const cols = Math.ceil(width / cellWidth) + 1;
     const rows = Math.ceil(height / cellHeight) + 1;
 
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const x = c * cellWidth;
-        const y = r * cellHeight;
+    // Lazy load the video element on the first frame
+    if (!this.video) {
+      this.video = document.createElement('video');
+      this.video.src = '/programming.mp4';
+      this.video.muted = true;
+      this.video.loop = true;
+      this.video.playsInline = true;
+      this.video.play().catch((err) => {
+        console.error('Error starting ASCII background video:', err);
+      });
 
-        // Wave formula for layout distortion and index selection
-        const waveIndexValue = (c * 0.1) + (r * 0.15) + Math.sin(c * 0.04 + r * 0.06 + timeFactor) * 6;
-        const charIdx = Math.floor(Math.abs(waveIndexValue));
-        const char = chars[charIdx % chars.length];
+      this.videoCanvas = document.createElement('canvas');
+      this.videoCtx = this.videoCanvas.getContext('2d', { willReadFrequently: true });
+    }
 
-        const posX = x + Math.sin(r * 0.12 + timeFactor) * amplitude;
-        const posY = y + Math.cos(c * 0.08 + timeFactor) * (amplitude * 0.5);
+    // Dynamic playback speed control
+    const targetSpeed = 0.2 + speedVal * 2.8; // 0.2x to 3.0x speed
+    if (Math.abs(this.video.playbackRate - targetSpeed) > 0.05) {
+      this.video.playbackRate = targetSpeed;
+    }
 
-        ctx.fillText(char, posX, posY);
+    // If video is ready, read frames and process pixels
+    if (this.video.readyState >= 2 && this.videoCanvas && this.videoCtx) {
+      // Ensure the offscreen canvas dimensions match our ASCII grid size
+      if (this.videoCanvas.width !== cols || this.videoCanvas.height !== rows) {
+        this.videoCanvas.width = cols;
+        this.videoCanvas.height = rows;
       }
+
+      // Draw current video frame scaled down to the grid size
+      this.videoCtx.drawImage(this.video, 0, 0, cols, rows);
+      const imgData = this.videoCtx.getImageData(0, 0, cols, rows);
+      const pixels = imgData.data;
+
+      // Character density ramp (lightest to darkest)
+      const chars = '   .,-~:;=!*#$@NM';
+      const maxCharIdx = chars.length - 1;
+
+      // Calculate Gamma correction exponent (from 0.2 to 4.0)
+      const gamma = 0.2 + gammaVal * 3.8;
+
+      // Calculate Contrast factor (from 0.0 to 3.0)
+      const contrastFactor = Math.max(0, 1 + (contrastVal - 0.5) * 4);
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; // Constant prominent dark alpha for text readability
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const pixelIdx = (r * cols + c) * 4;
+          const red = pixels[pixelIdx];
+          const green = pixels[pixelIdx + 1];
+          const blue = pixels[pixelIdx + 2];
+
+          // Normalized luminance (0 to 1)
+          let luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+
+          // Apply Gamma correction
+          luminance = Math.pow(luminance, 1 / gamma);
+
+          // Apply Contrast adjustment
+          luminance = 0.5 + (luminance - 0.5) * contrastFactor;
+          luminance = Math.max(0, Math.min(1, luminance)); // Clamp to [0, 1]
+
+          // Invert: dark video pixels become dense ASCII chars, light pixels become empty space
+          const charIdx = Math.floor((1 - luminance) * maxCharIdx);
+          const char = chars[charIdx];
+
+          if (char !== ' ') {
+            const x = c * cellWidth;
+            const y = r * cellHeight;
+            ctx.fillText(char, x, y);
+          }
+        }
+      }
+    } else {
+      // Fallback display if video is loading/buffering
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.fillText('CONNECTING SOURCE FOOTAGE...', width / 2, height / 2);
     }
   }
 }
