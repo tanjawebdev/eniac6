@@ -24,7 +24,7 @@ export function QuoteBlock() {
       {/* Header: Portrait | Name | Years */}
       <div className="quote-block-header">
         <div className="quote-block-portrait">
-          {/* Placeholder — images to be provided later */}
+          <img src={programmer.portrait} alt={programmer.fullName} />
         </div>
         <div className="quote-block-name">
           {programmer.fullName.toUpperCase()}

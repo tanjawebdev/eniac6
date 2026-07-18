@@ -10,6 +10,7 @@ export interface ProgrammerData {
   year: string;
   born: string;        // Birth year
   died: string;        // Death year (or empty if alive)
+  portrait: string;    // Path to portrait image
   role: string;
   uid: string;         // Unique NFC UID associated with this programmer's card
 }
@@ -25,6 +26,7 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     year: '1945',
     born: '1921',
     died: '2006',
+    portrait: '/portraits/kay.jpg',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.mcnulty,
   },
@@ -38,6 +40,7 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     year: '1945',
     born: '1924',
     died: '2011',
+    portrait: '/portraits/jean.jpg',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.jennings,
   },
@@ -51,6 +54,7 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     year: '1945',
     born: '1917',
     died: '2001',
+    portrait: '/portraits/betty.jpg',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.snyder,
   },
@@ -64,6 +68,7 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     year: '1945',
     born: '1922',
     died: '2008',
+    portrait: '/portraits/marlyn.jpg',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.wescoff,
   },
@@ -77,6 +82,7 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     year: '1945',
     born: '1922',
     died: '2012',
+    portrait: '/portraits/fran.jpg',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.bilas,
   },
@@ -90,6 +96,7 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     year: '1945',
     born: '1924',
     died: '1986',
+    portrait: '/portraits/ruth.jpg',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.lichterman,
   },

@@ -148,7 +148,7 @@ export class RecognitionAnimator implements ThemeAnimator {
    * Each character gets a deterministic threshold for blur assignment.
    */
   private computeLayout(width: number, height: number): void {
-    const marginX = 0;
+    const marginX = 10;
     const marginY = 0;
     const availWidth = width;
     const availHeight = height;

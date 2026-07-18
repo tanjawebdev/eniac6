@@ -26,9 +26,9 @@ export class TeamworkAnimator implements ThemeAnimator {
     ctx.fillRect(0, 0, width, height);
 
     const circleRadius = Math.max(3, Math.round(3 + (config.pot0 / 1023) * 25));
-    const speedVal = 0.3 + (config.pot1 / 1023) * 3;
+    const speedVal = 0.3 + (config.pot1 / 1023) * 20;
     const count = Math.max(5, Math.round(5 + (config.pot2 / 1023) * 40));
-    const lineDistance = Math.max(30, Math.round(30 + (config.pot3 / 1023) * 300));
+    const lineDistance = Math.max(30, Math.round(30 + (config.pot3 / 1023) * 1000));
 
     // Init or resize circles pool
     if (this.circles.length !== count || this.circlesInitCount !== count) {
@@ -63,8 +63,8 @@ export class TeamworkAnimator implements ThemeAnimator {
     }
 
     // Draw connecting lines for circles within lineDistance
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.lineWidth = 5;
     for (let i = 0; i < this.circles.length; i++) {
       for (let j = i + 1; j < this.circles.length; j++) {
         const dx = this.circles[i].x - this.circles[j].x;
@@ -72,7 +72,7 @@ export class TeamworkAnimator implements ThemeAnimator {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < lineDistance) {
-          const opacity = 0.4 * (1 - dist / lineDistance);
+          const opacity = 0.7 * (1 - dist / lineDistance);
           ctx.strokeStyle = `rgba(0, 0, 0, ${opacity})`;
           ctx.beginPath();
           ctx.moveTo(this.circles[i].x, this.circles[i].y);

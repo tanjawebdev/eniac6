@@ -9,13 +9,18 @@ interface Footstep {
   angle: number;
 }
 
+interface Walker {
+  id: number;
+  pathX: number;
+  pathY: number;
+  angle: number;
+  left: boolean;
+  timer: number;
+}
+
 export class PioneeringAnimator implements ThemeAnimator {
   private footsteps: Footstep[] = [];
-  private footstepTimer = 0;
-  private footstepPathX = 0;
-  private footstepPathY = 0;
-  private footstepAngle = -Math.PI / 4; // walking diagonally
-  private footstepLeft = true;
+  private walkers: Walker[] = [];
 
   public draw(
     ctx: CanvasRenderingContext2D,
@@ -32,62 +37,73 @@ export class PioneeringAnimator implements ThemeAnimator {
     const rasterSize = Math.max(2, Math.round(2 + (config.pot0 / 1023) * 12));
     const speedVal = 0.5 + (config.pot1 / 1023) * 4;
     const dotSize = Math.max(4, Math.round(1 + (config.pot2 / 1023) * rasterSize * 2));
-    const contrastVal = 0.3 + (config.pot3 / 1023) * 0.7;
+    const numWalkers = Math.min(6, Math.max(1, Math.floor((config.pot3 / 1023) * 6) + 1));
+
+    // Maintain walker count dynamically based on POT 3
+    while (this.walkers.length < numWalkers) {
+      const newId = (this.walkers.length > 0 ? Math.max(...this.walkers.map(w => w.id)) : 0) + 1;
+      this.walkers.push({
+        id: newId,
+        pathX: width * 0.15 + Math.random() * width * 0.7,
+        pathY: height + 80 + Math.random() * 300,
+        angle: -Math.PI / 2 + (Math.random() - 0.5) * 0.6,
+        left: Math.random() < 0.5,
+        timer: Math.random() * 400,
+      });
+    }
+    while (this.walkers.length > numWalkers) {
+      this.walkers.pop();
+    }
 
     const dt = 16; // approximate frame time
-    this.footstepTimer += dt * speedVal;
-
-    // Spawn a new footstep every ~500ms (adjusted by speed)
     const spawnInterval = 500 / speedVal;
-    if (this.footstepTimer >= spawnInterval) {
-      this.footstepTimer -= spawnInterval;
 
-      // Initialize position if starting fresh
-      if (this.footsteps.length === 0) {
-        this.footstepPathX = width * 0.2 + Math.random() * width * 0.3;
-        this.footstepPathY = height + 80;
-        this.footstepAngle = -Math.PI / 2 + (Math.random() - 0.5) * 0.6;
-      }
+    // Update each walker's path and spawn footprints
+    for (const walker of this.walkers) {
+      walker.timer += dt * speedVal;
+      if (walker.timer >= spawnInterval) {
+        walker.timer -= spawnInterval;
 
-      // Step distance
-      const stepLen = 80 + Math.random() * 30;
-      this.footstepPathX += Math.cos(this.footstepAngle) * stepLen * 0.5;
-      this.footstepPathY += Math.sin(this.footstepAngle) * stepLen;
+        // Step distance
+        const stepLen = 80 + Math.random() * 30;
+        walker.pathX += Math.cos(walker.angle) * stepLen * 0.5;
+        walker.pathY += Math.sin(walker.angle) * stepLen;
 
-      // Slight lateral offset for left/right foot
-      const lateralOffset = this.footstepLeft ? -25 : 25;
-      const fx = this.footstepPathX + Math.sin(this.footstepAngle) * lateralOffset;
-      const fy = this.footstepPathY - Math.cos(this.footstepAngle) * lateralOffset;
+        // Slight lateral offset for left/right foot
+        const lateralOffset = walker.left ? -25 : 25;
+        const fx = walker.pathX + Math.sin(walker.angle) * lateralOffset;
+        const fy = walker.pathY - Math.cos(walker.angle) * lateralOffset;
 
-      this.footsteps.push({
-        x: fx,
-        y: fy,
-        age: 0,
-        isLeft: this.footstepLeft,
-        angle: this.footstepAngle + (Math.random() - 0.5) * 0.15,
-      });
+        this.footsteps.push({
+          x: fx,
+          y: fy,
+          age: 0,
+          isLeft: walker.left,
+          angle: walker.angle + (Math.random() - 0.5) * 0.15,
+        });
 
-      this.footstepLeft = !this.footstepLeft;
+        walker.left = !walker.left;
 
-      // Gentle drift in direction
-      this.footstepAngle += (Math.random() - 0.5) * 0.3;
-      // Clamp to mostly upward
-      this.footstepAngle = Math.max(-Math.PI * 0.85, Math.min(-Math.PI * 0.15, this.footstepAngle));
+        // Gentle drift in direction
+        walker.angle += (Math.random() - 0.5) * 0.3;
+        // Clamp to mostly upward
+        walker.angle = Math.max(-Math.PI * 0.85, Math.min(-Math.PI * 0.15, walker.angle));
 
-      // When path goes off-screen, reset
-      if (this.footstepPathY < -200 || this.footstepPathX < -100 || this.footstepPathX > width + 100) {
-        this.footstepPathX = width * 0.2 + Math.random() * width * 0.6;
-        this.footstepPathY = height + 80;
-        this.footstepAngle = -Math.PI / 2 + (Math.random() - 0.5) * 0.6;
+        // When path goes off-screen, reset
+        if (walker.pathY < -200 || walker.pathX < -100 || walker.pathX > width + 100) {
+          walker.pathX = width * 0.15 + Math.random() * width * 0.7;
+          walker.pathY = height + 80;
+          walker.angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.6;
+        }
       }
     }
 
-    // Age and cull footsteps
+    // Age and cull footsteps dynamically
     for (const f of this.footsteps) {
       f.age += dt * speedVal;
     }
-    // Keep max ~40 footsteps
-    while (this.footsteps.length > 40) {
+    const maxFootsteps = 30 * numWalkers;
+    while (this.footsteps.length > maxFootsteps) {
       this.footsteps.shift();
     }
 
@@ -119,7 +135,7 @@ export class PioneeringAnimator implements ThemeAnimator {
     }
 
     // Now render as halftone dots
-    ctx.fillStyle = `rgba(0, 0, 0, ${contrastVal})`;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
     const maskData = maskCtx.getImageData(0, 0, width, height).data;
 
     for (let r = 0; r < rows; r++) {
