@@ -39,14 +39,14 @@
   display: grid;
   grid-template-columns: 160px 1fr auto;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  border-bottom: 3px solid rgba(255, 255, 255, 1);
 }
 
 .quote-block-portrait {
   width: 160px;
   height: 160px;
   background: rgba(255, 255, 255, 0.08);
-  border-right: 1px solid rgba(255, 255, 255, 0.35);
+  border-right: 3px solid rgba(255, 255, 255, 1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -73,7 +73,7 @@
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.7);
   white-space: nowrap;
-  border-left: 1px solid rgba(255, 255, 255, 0.35);
+  border-left: 3px solid rgba(255, 255, 255, 1);
   height: 100%;
   display: flex;
   align-items: center;
@@ -83,7 +83,7 @@
 .quote-block-quote {
   padding: 50px 60px 50px 60px;
   position: relative;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  border-bottom: 3px solid rgba(255, 255, 255, 1);
 }
 
 .quote-block-mark {
@@ -111,7 +111,7 @@
 /* ---- Context Section ---- */
 .quote-block-context {
   padding: 35px 60px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  border-bottom: 3px solid rgba(255, 255, 255, 1);
 }
 
 .quote-block-context-label {
