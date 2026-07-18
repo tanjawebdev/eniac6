@@ -4,19 +4,19 @@
 
 .quote-block {
   position: absolute;
-  left: 60px;
-  right: 60px;
+  left: 160px;
+  right: 160px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 20;
   pointer-events: auto;
 
   /* Glassmorphism card background */
-  background: rgba(12, 12, 12, 0.55);
+  background: rgba(12, 12, 12, 0.05);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 4px;
+  border: 3px solid rgba(255, 255, 255, 1);
+  box-shadow: 0 0 20px 6px #ffffff63 inset;
 
   /* Animate in */
   animation: quote-block-enter 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -27,6 +27,7 @@
     opacity: 0;
     transform: translateY(-50%) scale(0.92);
   }
+
   to {
     opacity: 1;
     transform: translateY(-50%) scale(1);
