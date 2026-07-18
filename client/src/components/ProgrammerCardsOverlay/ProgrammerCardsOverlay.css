@@ -26,6 +26,13 @@
   animation: pulse-white 2s ease-in-out infinite;
 }
 
+/* Hide the selected programmer's card when the quote block is visible */
+.overlay-programmer-card.hidden-by-quote {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease-out;
+}
+
 .overlay-programmer-card.inserted {
   border-color: var(--accent-color);
   color: var(--accent-color);

@@ -1,0 +1,358 @@
+{
+  "project": "ENIAC 6 Interactive Installation",
+  "language": "en",
+  "categories": [
+    "Computing",
+    "Pioneering",
+    "Teamwork",
+    "Recognition"
+  ],
+  "editorial_note": "One entry is provided for each woman and category. Where a surviving first-person quotation by the woman is unavailable—especially for Frances Bilas Spence—the entry is explicitly marked as a quotation or statement about her rather than presented as her own words.",
+  "women": [
+    {
+      "id": "jean_jennings_bartik",
+      "name": "Jean Jennings Bartik",
+      "entries": {
+        "computing": {
+          "quote": "They had no books or anything to teach us.",
+          "speaker": "Jean Jennings Bartik",
+          "quote_type": "direct_quote",
+          "context": "In 1945, the programmers were given engineering and logical diagrams, but no usable programming manual. They were not yet cleared to enter the ENIAC room, so they had to reconstruct the machine’s operation from drawings and teach themselves how its units could be connected into a program. Their work helped define programming at a time when programming languages, compilers, and formal courses did not yet exist.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "pp. 125–127, chapter “A New Project”"
+          }
+        },
+        "pioneering": {
+          "quote": "We knew we were pushing back frontiers.",
+          "speaker": "Jean Jennings Bartik",
+          "quote_type": "direct_quote",
+          "context": "Bartik described the sense that the team was entering territory no one had mapped before. They were turning a unique electronic machine into a general-purpose computer by discovering how to express mathematical problems as timed pulses, switch settings, and cable connections. Their methods became part of the foundation of modern programming.",
+          "source": {
+            "title": "The Computers",
+            "author": "ENIAC Programmers Project documentary",
+            "year": 2014,
+            "locator": "Jean Jennings Bartik interview excerpt; wording listed in the supplied quote matrix"
+          }
+        },
+        "teamwork": {
+          "quote": "Betty Snyder was my first perfect partner.",
+          "speaker": "Jean Jennings Bartik",
+          "quote_type": "direct_quote_about_betty",
+          "context": "Jean and Betty developed the trajectory program as an unusually rigorous pair. Each actively searched for faults in the other’s work, and finding an error was treated as a success because it prevented the mistake from remaining in the program. Jean later presented this method as a model for producing reliable code and solving complex design problems.",
+          "source": {
+            "title": "Pioneer Programmer",
+            "author": "Jean Jennings Bartik",
+            "year": 2013,
+            "locator": "pp. 84–85, chapter 3"
+          }
+        },
+        "recognition": {
+          "quote": "It felt as if history had been made that day—and then it had run over us and left us flat in its tracks.",
+          "speaker": "Jean Jennings Bartik",
+          "quote_type": "direct_quote",
+          "context": "On February 15, 1946, the ENIAC successfully demonstrated the trajectory program Jean and Betty had prepared. The programmers were not introduced, congratulated, or invited to the official celebratory dinner, even though their work made the central demonstration possible. Jean’s sentence captures the sharp contrast between participating in a historic breakthrough and being omitted from its public celebration.",
+          "source": {
+            "title": "Pioneer Programmer",
+            "author": "Jean Jennings Bartik",
+            "year": 2013,
+            "locator": "pp. 99–100, chapter 4"
+          }
+        }
+      }
+    },
+    {
+      "id": "betty_snyder_holberton",
+      "name": "Betty Snyder Holberton",
+      "entries": {
+        "computing": {
+          "quote": "How we learned to program, I have no idea... We must have thought it up ourselves.",
+          "speaker": "Betty Snyder Holberton",
+          "quote_type": "direct_quote",
+          "context": "The six programmers had no established programming method to follow. They worked from ENIAC’s diagrams and gradually discovered how to move numbers and control pulses through the machine, linking individual units into a complete sequence. Betty later summarized this process with striking understatement: the team effectively invented the method as they went.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "pp. 136–138, chapter “A Sequencing of the Problem”"
+          }
+        },
+        "pioneering": {
+          "quote": "Everything I did was the beginning of something new.",
+          "speaker": "Betty Snyder Holberton",
+          "quote_type": "direct_quote",
+          "context": "Betty’s career continued far beyond the ENIAC. She worked on early stored-program computers, contributed to programming tools and standards, and became known for testing new code and languages with exceptional precision. The quotation reflects a career repeatedly positioned at the beginning of new forms of computing.",
+          "source": {
+            "title": "The Computers",
+            "author": "ENIAC Programmers Project documentary",
+            "year": 2014,
+            "locator": "Betty Snyder Holberton interview excerpt; wording listed in the supplied quote matrix"
+          }
+        },
+        "teamwork": {
+          "quote": "Betty was bright, logical, and hard-working.",
+          "speaker": "Jean Jennings Bartik",
+          "quote_type": "quote_about_betty",
+          "context": "Jean’s description appears directly after she calls Betty her first perfect partner. Their partnership joined Jean’s mathematical work with Betty’s strength in logic, while both repeatedly checked and challenged the program. The result was not only a close friendship but a disciplined form of collaborative debugging.",
+          "source": {
+            "title": "Pioneer Programmer",
+            "author": "Jean Jennings Bartik",
+            "year": 2013,
+            "locator": "p. 85, chapter 3"
+          }
+        },
+        "recognition": {
+          "quote": "In those days the women were not recognized at all. So it was just a normal thing.",
+          "speaker": "Betty Snyder Holberton",
+          "quote_type": "direct_quote",
+          "context": "Betty was reflecting on ENIAC’s public demonstration, where the programmers were present but not introduced to the audience. Her calm wording shows how routine this exclusion appeared within the gender expectations of the period. The absence of recognition was not evidence that their contribution was minor; it was evidence of what institutions considered normal.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "pp. 178–179, chapter “Demonstration Day, February 15, 1946”"
+          }
+        }
+      }
+    },
+    {
+      "id": "kay_mcnulty_mauchly_antonelli",
+      "name": "Kathleen “Kay” McNulty Mauchly Antonelli",
+      "entries": {
+        "computing": {
+          "quote": "I know how! We use the master programmer to reuse code!",
+          "speaker": "Kathleen “Kay” McNulty",
+          "quote_type": "direct_quote_recalled_by_jean",
+          "context": "The programmers were struggling to fit the many repeated calculations of a ballistic trajectory onto ENIAC. Kay realized that the master programmer could repeat an existing sequence instead of requiring the same cables and switches to be recreated for every step. Jean Bartik remembered the exclamation as a breakthrough: an early practical use of looping and reusable program logic.",
+          "source": {
+            "title": "Pioneer Programmer",
+            "author": "Jean Jennings Bartik",
+            "year": 2013,
+            "locator": "pp. 80–81, chapter 3"
+          }
+        },
+        "pioneering": {
+          "quote": "In retrospect, I think that we were like fighter pilots.",
+          "speaker": "Kathleen “Kay” McNulty",
+          "quote_type": "direct_quote",
+          "context": "Kay used the fighter-pilot comparison after recalling the 1946 demonstration. ENIAC was an extraordinary machine, but it could not simply be handed to an untrained operator; its programmers needed detailed knowledge of its timing, units, switches, and connections. The metaphor asserts that their role required specialized technical judgment, not routine machine operation.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "pp. 179–180, chapter “Demonstration Day, February 15, 1946”"
+          }
+        },
+        "teamwork": {
+          "quote": "I really loved working with those girls that were Programmers on the ENIAC with me.",
+          "speaker": "Kathleen “Kay” McNulty",
+          "quote_type": "direct_quote",
+          "context": "The six women divided ENIAC’s units among pairs, taught one another what they discovered, and later reunited to build the complete trajectory program. Their collaboration continued over meals, where discussions repeatedly returned to computing and the future of the machine. Kay’s recollection frames the team not only as colleagues but as a close technical community.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "pp. 156–157, chapter “Parallel Programming”"
+          }
+        },
+        "recognition": {
+          "quote": "None of us girls were ever introduced as any part of it.",
+          "speaker": "Kathleen “Kay” McNulty",
+          "quote_type": "direct_quote",
+          "context": "During ENIAC’s major public demonstration, the programmers distributed printed trajectories and helped run the event, but the speakers did not identify them or explain their work. The audience therefore saw the machine’s result without knowing who had translated the trajectory equations into a functioning program. Kay’s statement records how their contribution disappeared at the exact moment ENIAC entered public history.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "pp. 177–178, chapter “Demonstration Day, February 15, 1946”"
+          }
+        }
+      }
+    },
+    {
+      "id": "marlyn_wescoff_meltzer",
+      "name": "Marlyn Wescoff Meltzer",
+      "entries": {
+        "computing": {
+          "quote": "We were computing. And we were Computers.",
+          "speaker": "Marlyn Wescoff Meltzer",
+          "quote_type": "direct_quote",
+          "context": "Before programming ENIAC, Marlyn worked as a human “Computer,” calculating ballistic tables with desk calculators. The job title referred to people who carried out long numerical procedures by hand, step after step. Her words connect the human labor of wartime computation with the electronic machine that would soon perform those calculations at unprecedented speed.",
+          "source": {
+            "title": "The Computers",
+            "author": "ENIAC Programmers Project documentary",
+            "year": 2014,
+            "locator": "Marlyn Wescoff Meltzer interview excerpt; wording listed in the supplied quote matrix"
+          }
+        },
+        "pioneering": {
+          "quote": "We would grope it out and figure it out together.",
+          "speaker": "Marlyn Wescoff Meltzer",
+          "quote_type": "reconstructed_direct_wording_in_narrative",
+          "context": "The women had been left with large diagrams, little documentation, and no direct access to the computer itself. Marlyn believed that the team could still solve the problem collectively. They divided ENIAC into units, studied them in pairs, and returned to teach one another—turning uncertainty into a workable programming method.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "pp. 127–133, chapter “Divide and Conquer”"
+          }
+        },
+        "teamwork": {
+          "quote": "We went to movies, we went to the concerts together, and plays when we could.",
+          "speaker": "Marlyn Wescoff Meltzer",
+          "quote_type": "direct_quote_about_ruth_and_marlyn",
+          "context": "Marlyn and Ruth were paired for demanding bench-test work that manually reproduced ENIAC’s trajectory calculations. The precision required by this task brought them closer, and their friendship extended beyond the Moore School into dinners, films, concerts, and plays. Their relationship shows how technical trust and personal companionship developed together.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "around pp. 151–153, chapter “Bench Tests and Best Friends”"
+          }
+        },
+        "recognition": {
+          "quote": "The attendees would think they were the operators of that machine and that was it.",
+          "speaker": "Marlyn Wescoff Meltzer",
+          "quote_type": "direct_quote",
+          "context": "Marlyn understood what the audience would infer when the women were visible near ENIAC but their work was never explained. Without their names or roles, they could easily be mistaken for attendants who merely operated controls prepared by others. In reality, they had spent thousands of hours designing, testing, and setting up the program demonstrated that day.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "p. 178, chapter “Demonstration Day, February 15, 1946”"
+          }
+        }
+      }
+    },
+    {
+      "id": "fran_bilas_spence",
+      "name": "Frances “Fran” Bilas Spence",
+      "entries": {
+        "computing": {
+          "quote": "The two put their heads together to study the high-speed multiplier and figure out how it worked.",
+          "speaker": "Kathy Kleiman",
+          "quote_type": "narrative_statement_about_fran_and_kay",
+          "context": "Fran joined the ENIAC team after supervising work on the differential analyzer. Kay brought her up to date, and the two friends studied the high-speed multiplier from its diagrams because they were not yet permitted to enter the ENIAC room. They later taught the rest of the team how the multiplier handled large-number calculations.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "pp. 129–133, chapter “Divide and Conquer”"
+          }
+        },
+        "pioneering": {
+          "quote": "What brought us together initially was an advertisement for recently graduated female math majors.",
+          "speaker": "Jean Jennings Bartik",
+          "quote_type": "group_quote_including_fran",
+          "context": "Fran and Kay were among the rare women of their generation to graduate with mathematics degrees, both from Chestnut Hill College. They answered an Army recruitment notice seeking women with mathematical training and entered the wartime computing section at the Moore School. That recruitment route eventually placed Fran among the six women selected to program ENIAC.",
+          "source": {
+            "title": "Pioneer Programmer",
+            "author": "Jean Jennings Bartik",
+            "year": 2013,
+            "locator": "prologue and pp. 79–80"
+          }
+        },
+        "teamwork": {
+          "quote": "The two best friends were back together.",
+          "speaker": "Kathy Kleiman",
+          "quote_type": "narrative_statement_about_fran_and_kay",
+          "context": "Fran and Kay had studied mathematics together and had already supervised teams working with the differential analyzer. When Fran was transferred to the ENIAC project, they became partners again and took responsibility for understanding the high-speed multiplier. Their friendship became part of the team’s divide-and-conquer method: learn one unit deeply, then teach it to everyone else.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "pp. 129–130, chapter “Divide and Conquer”"
+          }
+        },
+        "recognition": {
+          "quote": "For decades, this famous photograph of two ENIAC Programmers was shared without the women being named.",
+          "speaker": "Kathy Kleiman",
+          "quote_type": "historical_caption_about_fran_and_jean",
+          "context": "The photograph shows Jean Jennings Bartik and Fran Bilas Spence working beside ENIAC, yet it circulated for decades without identifying them. The missing names allowed the women to be interpreted as anonymous models or operators rather than programmers. Restoring the caption restores both their identities and the technical meaning of the image.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "photographic section; caption identifying Jean on the left and Fran on the right"
+          }
+        }
+      }
+    },
+    {
+      "id": "ruth_lichterman_teitelbaum",
+      "name": "Ruth Lichterman Teitelbaum",
+      "entries": {
+        "computing": {
+          "quote": "We did a lot of testing on it... and got it working again.",
+          "speaker": "Ruth Lichterman Teitelbaum",
+          "quote_type": "direct_quote",
+          "context": "After ENIAC was moved from Philadelphia to Aberdeen in 1947, it arrived with damage from the journey. Ruth and Kay worked with engineers for seven months, testing the machine unit by unit with diagnostic programs they had learned to create themselves. Their work was essential to reconstructing ENIAC and returning it to operation.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "pp. 206–207, chapter “ENIAC 5 in and around Aberdeen”"
+          }
+        },
+        "pioneering": {
+          "quote": "About sixty of us signed up because we were all curious and I was one of the lucky six that was chosen.",
+          "speaker": "Ruth Lichterman Teitelbaum",
+          "quote_type": "direct_quote",
+          "context": "A notice circulated among the Army’s computing teams asking who was interested in learning to work on a classified special machine. The candidates were told almost nothing about the project, but roughly sixty volunteered. Ruth’s curiosity placed her among the six selected for what became the ENIAC programming team.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "p. 108, chapter describing selection of the programmers"
+          }
+        },
+        "teamwork": {
+          "quote": "Marlyn and Ruth grew much closer.",
+          "speaker": "Kathy Kleiman",
+          "quote_type": "narrative_statement_about_ruth_and_marlyn",
+          "context": "Ruth and Marlyn manually calculated a trajectory exactly as ENIAC would process it, operation by operation. This bench test gave the programmers an independent result against which they could check the electronic machine and diagnose errors. The long, meticulous assignment strengthened both their working partnership and their friendship.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "around pp. 151–153, chapter “Bench Tests and Best Friends”"
+          }
+        },
+        "recognition": {
+          "quote": "In many photographs, Ruth is present and unnamed as she stands quietly in the background.",
+          "speaker": "Kathy Kleiman",
+          "quote_type": "historical_statement_about_ruth",
+          "context": "After ENIAC moved to Aberdeen, Ruth became a senior programmer and supervised newer programming teams. Photographs often recorded her presence but omitted her name, even when she was visibly overseeing the work. In 2019, an image containing Ruth appeared on the cover of the New York Times Magazine and still did not identify her.",
+          "source": {
+            "title": "Proving Ground",
+            "author": "Kathy Kleiman",
+            "year": 2022,
+            "locator": "p. 216, chapter “A New Life”"
+          }
+        }
+      }
+    }
+  ],
+  "sources": [
+    {
+      "id": "bartik_2013",
+      "title": "Pioneer Programmer: Jean Jennings Bartik and the Computer That Changed the World",
+      "author": "Jean Jennings Bartik",
+      "year": 2013
+    },
+    {
+      "id": "kleiman_2022",
+      "title": "Proving Ground: The Untold Story of the Six Women Who Programmed the World’s First Modern Computer",
+      "author": "Kathy Kleiman",
+      "year": 2022
+    },
+    {
+      "id": "the_computers",
+      "title": "The Computers",
+      "author": "ENIAC Programmers Project",
+      "year": 2014,
+      "note": "Used only where the quotation was already documented in the supplied workbook; contexts were cross-checked against the uploaded books."
+    }
+  ]
+}

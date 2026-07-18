@@ -8,6 +8,8 @@ export interface ProgrammerData {
   color: string;       // Hex color (updated to new colors)
   colorDark: string;       // Hex color (updated to new colors)
   year: string;
+  born: string;        // Birth year
+  died: string;        // Death year (or empty if alive)
   role: string;
   uid: string;         // Unique NFC UID associated with this programmer's card
 }
@@ -17,10 +19,12 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     key: 'mcnulty',
     name: 'Kay\nMcNulty',
     firstName: 'Kay',
-    fullName: 'Kathleen McNulty',
+    fullName: 'Kathleen McNulty Mauchly Antonelli',
     color: '#F0CA38',
     colorDark: '#d0b030ff',
     year: '1945',
+    born: '1921',
+    died: '2006',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.mcnulty,
   },
@@ -28,10 +32,12 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     key: 'jennings',
     name: 'Jean\nJennings',
     firstName: 'Jean',
-    fullName: 'Betty Jean Jennings Bartik',
+    fullName: 'Jean Jennings Bartik',
     color: '#E78C2B',
     colorDark: '#cb7121ff',
     year: '1945',
+    born: '1924',
+    died: '2011',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.jennings,
   },
@@ -43,6 +49,8 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     color: '#D84A1C',
     colorDark: '#b63413ff',
     year: '1945',
+    born: '1917',
+    died: '2001',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.snyder,
   },
@@ -54,6 +62,8 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     color: '#9B3A3D',
     colorDark: '#803033ff',
     year: '1945',
+    born: '1922',
+    died: '2008',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.wescoff,
   },
@@ -65,6 +75,8 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     color: '#805383ff',
     colorDark: '#5C3D5E',
     year: '1945',
+    born: '1922',
+    died: '2012',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.bilas,
   },
@@ -76,6 +88,8 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     color: '#4769a1ff',
     colorDark: '#0B3D7D',
     year: '1945',
+    born: '1924',
+    died: '1986',
     role: 'programmer',
     uid: PROGRAMMER_UIDS.lichterman,
   },

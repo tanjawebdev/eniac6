@@ -2,6 +2,7 @@ import React from 'react';
 import { useAppStore } from '../../stores/appStore';
 import { useHardwareStore } from '../../stores/hardwareStore';
 import { PROGRAMMER_LIST } from '../../data/programmers';
+import { QuoteBlock } from '../QuoteBlock/QuoteBlock';
 import './ProgrammerCardsOverlay.css';
 
 import { type ProgrammerKey } from '@shared/constants';
@@ -9,6 +10,7 @@ import { type ProgrammerKey } from '@shared/constants';
 export function ProgrammerCardsOverlay() {
   const currentScene = useAppStore((state) => state.currentScene);
   const selectedTheme = useAppStore((state) => state.selectedTheme);
+  const selectedProgrammer = useAppStore((state) => state.selectedProgrammer);
   const nfcStates = useHardwareStore((state) => state.nfc);
 
   // Only show cards overlay in home and theme scenes
@@ -36,6 +38,7 @@ export function ProgrammerCardsOverlay() {
   };
 
   const isThemeActive = currentScene === 'theme' && !!selectedTheme;
+  const showQuoteBlock = isThemeActive && !!selectedProgrammer;
 
   return (
     <div className={`programmer-cards-overlay ${isThemeActive ? 'programming-theme-mode' : ''}`}>
@@ -44,10 +47,14 @@ export function ProgrammerCardsOverlay() {
         const pos = CARD_POSITIONS[prog.key];
         const displayName = prog.key === 'wescoff' ? 'MARYL' : prog.firstName.toUpperCase();
 
+        // Hide the selected programmer's card when quote block is showing
+        const isSelected = selectedProgrammer === prog.key;
+        const hideCard = showQuoteBlock && isSelected;
+
         return (
           <div
             key={prog.key}
-            className={`overlay-programmer-card ${isNfcIn ? 'inserted' : ''}`}
+            className={`overlay-programmer-card ${isNfcIn ? 'inserted' : ''} ${hideCard ? 'hidden-by-quote' : ''}`}
             style={{
               left: `${pos.x}px`,
               top: `${pos.y}px`,
@@ -60,6 +67,10 @@ export function ProgrammerCardsOverlay() {
           </div>
         );
       })}
+
+      {/* Quote Block — shown when a programmer card is inserted during a theme */}
+      {showQuoteBlock && <QuoteBlock />}
     </div>
   );
 }
+

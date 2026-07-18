@@ -1,0 +1,143 @@
+/* ============================================
+   Quote Block — Contextual Quote Overlay
+   ============================================ */
+
+.quote-block {
+  position: absolute;
+  left: 60px;
+  right: 60px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  pointer-events: auto;
+
+  /* Glassmorphism card background */
+  background: rgba(12, 12, 12, 0.55);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+
+  /* Animate in */
+  animation: quote-block-enter 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes quote-block-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+/* ---- Header Row ---- */
+.quote-block-header {
+  display: grid;
+  grid-template-columns: 160px 1fr auto;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.quote-block-portrait {
+  width: 160px;
+  height: 160px;
+  background: rgba(255, 255, 255, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quote-block-name {
+  padding: 0 40px;
+  font-family: var(--font-mono);
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quote-block-years {
+  padding: 0 40px;
+  font-family: var(--font-mono);
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  border-left: 1px solid rgba(255, 255, 255, 0.35);
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* ---- Quote Area ---- */
+.quote-block-quote {
+  padding: 50px 60px 50px 60px;
+  position: relative;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.quote-block-mark {
+  font-family: var(--font-display);
+  font-size: 140px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.25);
+  line-height: 0.5;
+  position: absolute;
+  top: 45px;
+  left: 20px;
+  user-select: none;
+}
+
+.quote-block-text {
+  font-family: var(--font-display);
+  font-size: 68px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #ffffff;
+  margin: 0;
+  padding-left: 50px;
+}
+
+/* ---- Context Section ---- */
+.quote-block-context {
+  padding: 35px 60px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.quote-block-context-label {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.04em;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.quote-block-context-text {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+}
+
+/* ---- Source Line ---- */
+.quote-block-source {
+  padding: 25px 60px;
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.5);
+}
