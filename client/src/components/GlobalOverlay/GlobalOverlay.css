@@ -42,3 +42,8 @@
   mix-blend-mode: exclusion;
   pointer-events: none;
 }
+
+/* Difference blend mode for Recognition theme */
+.theme-recognition .overlay-texture {
+  mix-blend-mode: difference;
+}

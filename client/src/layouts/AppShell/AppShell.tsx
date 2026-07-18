@@ -73,7 +73,7 @@ export function AppShell() {
 
   return (
     <div className={`app-shell-container ${devScale ? 'scaled-mode' : ''}`}>
-      <div className="app-shell" style={shellStyle}>
+      <div className={`app-shell theme-${selectedTheme || 'none'}`} style={shellStyle}>
         {/* Particle/Shape Animation Canvas */}
         <CanvasBackground />
 

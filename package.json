@@ -4,10 +4,14 @@
   "private": true,
   "description": "Interactive museum installation — ENIAC Six women programmers",
   "scripts": {
+    "dev": "concurrently --kill-others-on-fail --prefix \"[{name}]\" --names \"server,client\" --prefix-colors \"yellow,cyan\" \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd client && npm run dev",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.4"
   }
 }
