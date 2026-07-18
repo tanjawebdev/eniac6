@@ -39,7 +39,7 @@ export function AppShell() {
   // Set css custom property for dynamic color changes
   useEffect(() => {
     document.documentElement.style.setProperty('--active-color', activeColor);
-    
+
     // Convert hex to rgb for glow
     const hex = activeColor.replace('#', '');
     const r = parseInt(hex.substring(0, 2), 16);
@@ -62,18 +62,18 @@ export function AppShell() {
 
   const shellStyle: React.CSSProperties = devScale
     ? {
-        width: '2160px',
-        height: '3840px',
-        transform: `translate(-50%, -50%) scale(${scale})`,
-        left: '50%',
-        top: '50%',
-        position: 'absolute',
-      }
+      width: '2160px',
+      height: '3840px',
+      transform: `translate(-50%, -50%) scale(${scale})`,
+      left: '50%',
+      top: '50%',
+      position: 'absolute',
+    }
     : {};
 
   return (
     <div className={`app-shell-container ${devScale ? 'scaled-mode' : ''}`}>
-      <div className={`app-shell theme-${selectedTheme || 'none'}`} style={shellStyle}>
+      <div className={`app-shell ${selectedTheme ? 'is-theme' : ''} theme-${selectedTheme || 'none'}`} style={shellStyle}>
         {/* Particle/Shape Animation Canvas */}
         <CanvasBackground />
 

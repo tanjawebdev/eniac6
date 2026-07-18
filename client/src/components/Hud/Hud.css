@@ -15,6 +15,14 @@
   pointer-events: none;
 }
 
+.home-header-text-inside {
+  padding: 10px 30px;
+}
+
+.is-theme .home-header-text-inside {
+  background-color: rgba(0, 0, 0, 1);
+}
+
 .home-header-text .text-light {
   opacity: 0.5;
 }

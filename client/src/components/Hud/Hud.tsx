@@ -15,7 +15,9 @@ export function Hud() {
 
   return (
     <div className="home-header-text">
-      {insertedCount}<span className="text-light">/6 </span>programmers inserted
+      <span className="home-header-text-inside">
+        {insertedCount}<span className="text-light">/6 </span>programmers inserted
+      </span>
     </div>
   );
 }
