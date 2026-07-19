@@ -104,5 +104,5 @@
 }
 
 .programmer-cards-overlay.programming-theme-mode .overlay-programmer-card.inserted span {
-  color: #ffffff;
+  color: var(--active-color);
 }
