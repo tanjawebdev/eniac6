@@ -7,6 +7,13 @@ import { THEME_IDS, THEME_POT_MAPPING, PROGRAMMER_UIDS, UID_TO_PROGRAMMER, type 
 import { PROGRAMMERS } from '../../data/programmers';
 import './DebugOverlay.css';
 
+const THEME_POT_LABELS: Record<ThemeId, [string, string, string, string]> = {
+  pioneering: ['RASTER', 'SPEED', 'DOT SIZE', 'PEOPLE'],
+  programming: ['SCALE', 'SPEED', 'CONTRAST', 'AMPLITUDE'],
+  recognition: ['DENSITY', 'SPEED', 'BLUR', 'ALPHA'],
+  teamwork: ['SIZE', 'SPEED', 'COUNT', 'LINE DIST'],
+};
+
 export interface DebugOverlayProps {
   standalone?: boolean;
 }
@@ -236,7 +243,7 @@ export function DebugOverlay({ standalone = false }: DebugOverlayProps) {
                         return (
                           <div key={id} className="pot-bar-wrapper interactive">
                             <div className="pot-bar-labels">
-                              <span>P{id.toString().padStart(2, '0')}</span>
+                              <span>P{id.toString().padStart(2, '0')} ({THEME_POT_LABELS[themeId][offset]})</span>
                               <span>{val}</span>
                             </div>
                             <div className="pot-bar-track-container">

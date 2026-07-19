@@ -40,13 +40,31 @@ export function AppShell() {
   useEffect(() => {
     document.documentElement.style.setProperty('--active-color', activeColor);
 
+    // Find the current selected programmer's dark color, or default to a dark tone
+    let darkColor = '#222222';
+    if (selectedProgKey) {
+      const prog = PROGRAMMERS[selectedProgKey];
+      if (prog) {
+        darkColor = prog.colorDark;
+      }
+    } else if (selectedTheme) {
+      const lastColor = useAppStore.getState().themeColors[selectedTheme];
+      if (lastColor && lastColor !== '#333333') {
+        const prog = Object.values(PROGRAMMERS).find(p => p.color === lastColor);
+        if (prog) {
+          darkColor = prog.colorDark;
+        }
+      }
+    }
+    document.documentElement.style.setProperty('--active-color-dark', darkColor);
+
     // Convert hex to rgb for glow
     const hex = activeColor.replace('#', '');
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
     document.documentElement.style.setProperty('--accent-glow', `rgba(${r}, ${g}, ${b}, 0.25)`);
-  }, [activeColor]);
+  }, [activeColor, selectedProgKey, selectedTheme]);
 
   // Set background color property dynamically when any theme is active
   useEffect(() => {

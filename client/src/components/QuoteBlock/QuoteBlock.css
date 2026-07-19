@@ -75,7 +75,7 @@
 .quote-block-years {
   padding: 0 40px;
   font-family: var(--font-mono);
-  font-size: 34px;
+  font-size: 38px;
   font-weight: 500;
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.7);
@@ -123,7 +123,7 @@
 
 .quote-block-context-label {
   font-family: var(--font-mono);
-  font-size: 28px;
+  font-size: 38px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.7);
   letter-spacing: 0.04em;
@@ -133,7 +133,7 @@
 
 .quote-block-context-text {
   font-family: var(--font-mono);
-  font-size: 28px;
+  font-size: 38px;
   font-weight: 400;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.75);

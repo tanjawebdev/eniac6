@@ -424,16 +424,111 @@
 .debug-overlay.standalone {
   position: static;
   width: 100%;
-  max-width: 1100px;
+  max-width: 1600px;
   height: auto;
   margin: 0 auto;
-  padding: 32px;
+  padding: 40px;
   overflow: visible;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  font-size: 15px;
 }
 
 .debug-overlay.standalone .debug-header {
   margin-bottom: 24px;
+}
+
+.debug-overlay.standalone .debug-header h3 {
+  font-size: 26px;
+}
+
+.debug-overlay.standalone .debug-sub {
+  font-size: 13px;
+}
+
+.debug-overlay.standalone .debug-section h4 {
+  font-size: 18px;
+}
+
+.debug-overlay.standalone .debug-label {
+  font-size: 12px;
+}
+
+.debug-overlay.standalone .debug-val {
+  font-size: 15px;
+}
+
+.debug-overlay.standalone .emulation-notice {
+  font-size: 12px;
+}
+
+.debug-overlay.standalone .pot-group-title {
+  font-size: 12px;
+}
+
+.debug-overlay.standalone .pot-bar-labels {
+  font-size: 13px;
+}
+
+.debug-overlay.standalone .pot-bar-wrapper {
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+
+.debug-overlay.standalone .banana-group-title {
+  font-size: 12px;
+}
+
+.debug-overlay.standalone .banana-jack-lbl {
+  font-size: 13px;
+}
+
+.debug-overlay.standalone .banana-dropdown {
+  font-size: 14px;
+  padding: 6px 10px;
+}
+
+.debug-overlay.standalone .banana-jack-val {
+  font-size: 14px;
+}
+
+.debug-overlay.standalone .banana-jack-item {
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+
+.debug-overlay.standalone .nfc-idx {
+  font-size: 14px;
+}
+
+.debug-overlay.standalone .nfc-prog {
+  font-size: 13px;
+}
+
+.debug-overlay.standalone .nfc-dropdown {
+  font-size: 14px;
+  padding: 6px 10px;
+  max-width: 320px;
+}
+
+.debug-overlay.standalone .nfc-item-row {
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+.debug-overlay.standalone .debug-sub-title {
+  font-size: 13px;
+}
+
+.debug-overlay.standalone .btn-indicator {
+  padding: 16px;
+  font-size: 15px;
+  border-radius: 8px;
+}
+
+.debug-overlay.standalone .contact-indicator {
+  padding: 12px;
+  font-size: 13px;
+  border-radius: 8px;
 }
 
 .debug-overlay.standalone .debug-overlay-content {
