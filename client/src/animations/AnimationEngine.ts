@@ -42,14 +42,7 @@ export class AnimationEngine {
     teamwork: new TeamworkAnimator(),
   };
 
-  private blobs: Array<{
-    rx: number;
-    ry: number;
-    color: string;
-    speedX: number;
-    speedY: number;
-    angle: number;
-  }> = [];
+  private noisePattern: CanvasPattern | null = null;
 
   public config: EngineConfig = {
     color: null,
@@ -94,6 +87,9 @@ export class AnimationEngine {
 
     // Sync initial particle count
     this.syncParticleCount(this.config.amount);
+
+    // Create film grain noise pattern
+    this.createNoisePattern();
 
     // Start render loop
     this.animate();
@@ -140,41 +136,160 @@ export class AnimationEngine {
     }
   }
 
-  private initBlobs(): void {
-    this.blobs = [
+  private createNoisePattern(): void {
+    const nCanvas = document.createElement('canvas');
+    nCanvas.width = 256;
+    nCanvas.height = 256;
+    const nCtx = nCanvas.getContext('2d');
+    if (!nCtx) return;
+
+    const imgData = nCtx.createImageData(256, 256);
+    const data = imgData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const grain = Math.floor(Math.random() * 255);
+      data[i] = grain;
+      data[i + 1] = grain;
+      data[i + 2] = grain;
+      data[i + 3] = 22; // subtle film grain
+    }
+    nCtx.putImageData(imgData, 0, 0);
+    this.noisePattern = this.ctx.createPattern(nCanvas, 'repeat');
+  }
+
+  private drawLiquidWaves(ctx: CanvasRenderingContext2D, width: number, height: number, timeVal: number): void {
+    const t = timeVal * 0.0009;
+
+    // Dark background base
+    ctx.fillStyle = '#06020a';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.save();
+    ctx.filter = 'blur(500px)';
+    ctx.globalCompositeOperation = 'screen';
+
+    // Rotate center pivot slightly for diagonal wave flow matching reference image
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    ctx.translate(centerX, centerY);
+    ctx.rotate(-0.35); // ~20 degree tilt
+    ctx.translate(-centerX, -centerY);
+
+    const layers = [
       {
-        rx: 0.5,
-        ry: 0.6,
-        color: 'rgba(230, 92, 0, 0.65)', // Fiery Orange
-        speedX: 0.00015,
-        speedY: 0.0001,
-        angle: Math.random() * Math.PI * 2,
+        // Deep Purple / Indigo base ribbon
+        pos: 0.15,
+        w: width * 0.55,
+        colors: ['rgba(55, 20, 90, 0.85)', 'rgba(20, 8, 45, 0.3)'],
+        amp1: width * 0.2, freq1: 0.003, speed1: 0.5,
+        amp2: width * 0.12, freq2: 0.007, speed2: -0.8,
+        amp3: width * 0.07, freq3: 0.012, speed3: 1.1,
+        phase: 0
       },
       {
-        rx: 0.6,
-        ry: 0.7,
-        color: 'rgba(100, 30, 180, 0.75)', // Deep Purple
-        speedX: -0.0001,
-        speedY: 0.00012,
-        angle: Math.random() * Math.PI * 2,
+        // Main Fiery Orange liquid fold (Focal wave matching reference image)
+        pos: 0.42,
+        w: width * 0.5,
+        colors: ['rgba(245, 65, 5, 0.95)', 'rgba(175, 20, 30, 0.4)'],
+        amp1: width * 0.24, freq1: 0.0024, speed1: 0.7,
+        amp2: width * 0.16, freq2: 0.0055, speed2: -0.6,
+        amp3: width * 0.09, freq3: 0.01, speed3: 0.9,
+        phase: 1.2
       },
       {
-        rx: 0.55,
-        ry: 0.5,
-        color: 'rgba(180, 15, 60, 0.55)', // Crimson Red
-        speedX: 0.00012,
-        speedY: -0.00013,
-        angle: Math.random() * Math.PI * 2,
+        // Warm Amber / Gold liquid wave accent
+        pos: 0.32,
+        w: width * 0.35,
+        colors: ['rgba(238, 135, 38, 1)', 'rgba(202, 100, 16, 0.92)'],
+        amp1: width * 0.18, freq1: 0.0032, speed1: 0.9,
+        amp2: width * 0.11, freq2: 0.0075, speed2: -1.1,
+        amp3: width * 0.06, freq3: 0.014, speed3: 0.7,
+        phase: 2.8
       },
       {
-        rx: 0.45,
-        ry: 0.55,
-        color: 'rgba(30, 10, 60, 0.85)', // Dark Blue/Violet
-        speedX: -0.00013,
-        speedY: -0.00011,
-        angle: Math.random() * Math.PI * 2,
+        // Deep Crimson / Violet fold
+        pos: 0.68,
+        w: width * 0.52,
+        colors: ['rgba(165, 15, 15, 0.85)', 'rgba(50, 10, 50, 0.35)'],
+        amp1: width * 0.22, freq1: 0.0026, speed1: -0.5,
+        amp2: width * 0.14, freq2: 0.006, speed2: 0.8,
+        amp3: width * 0.08, freq3: 0.011, speed3: -1.0,
+        phase: 4.1
       },
+      {
+        // Secondary Orange stream (Lower wave in reference image)
+        pos: 0.58,
+        w: width * 0.42,
+        colors: ['rgba(50, 30, 134, 0.9)', 'rgba(76, 22, 112, 0.3)'],
+        amp1: width * 0.19, freq1: 0.0028, speed1: 0.8,
+        amp2: width * 0.13, freq2: 0.0065, speed2: -0.7,
+        amp3: width * 0.07, freq3: 0.012, speed3: 1.2,
+        phase: 5.3
+      },
+      {
+        // Soft Plum / Blue accent edge wave
+        pos: 0.85,
+        w: width * 0.45,
+        colors: ['rgba(75, 30, 125, 0.75)', 'rgba(15, 10, 40, 0.2)'],
+        amp1: width * 0.16, freq1: 0.0035, speed1: 0.6,
+        amp2: width * 0.1, freq2: 0.008, speed2: -0.9,
+        amp3: width * 0.05, freq3: 0.015, speed3: 0.8,
+        phase: 3.5
+      }
     ];
+
+    const stepY = 12;
+    const startY = -height * 0.4;
+    const endY = height * 1.4;
+
+    for (const layer of layers) {
+      const baseCenterX = width * layer.pos;
+
+      ctx.beginPath();
+
+      // Left edge contour
+      for (let y = startY; y <= endY; y += stepY) {
+        const shift =
+          Math.sin(y * layer.freq1 + t * layer.speed1 + layer.phase) * layer.amp1 +
+          Math.cos(y * layer.freq2 + t * layer.speed2 + layer.phase * 1.4) * layer.amp2 +
+          Math.sin(y * layer.freq3 + t * layer.speed3) * layer.amp3;
+
+        const x = baseCenterX + shift - layer.w / 2;
+        if (y === startY) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+
+      // Right edge contour (returning back up)
+      for (let y = endY; y >= startY; y -= stepY) {
+        const shift =
+          Math.sin(y * layer.freq1 + t * layer.speed1 + layer.phase + 0.35) * (layer.amp1 * 1.08) +
+          Math.cos(y * layer.freq2 + t * layer.speed2 + layer.phase * 1.4 + 0.45) * (layer.amp2 * 0.92) +
+          Math.sin(y * layer.freq3 + t * layer.speed3 + 0.7) * layer.amp3;
+
+        const x = baseCenterX + shift + layer.w / 2;
+        ctx.lineTo(x, y);
+      }
+
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(baseCenterX - layer.w / 2, startY, baseCenterX + layer.w / 2, endY);
+      grad.addColorStop(0, layer.colors[0]);
+      grad.addColorStop(1, layer.colors[1]);
+
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    ctx.restore();
+
+    // Film grain texture
+    if (this.noisePattern) {
+      ctx.save();
+      ctx.fillStyle = this.noisePattern;
+      ctx.globalCompositeOperation = 'overlay';
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+    }
   }
 
   private animate = (timestamp?: number): void => {
@@ -219,46 +334,8 @@ export class AnimationEngine {
     }
 
     if (config.allInserted) {
-      if (this.blobs.length === 0) {
-        this.initBlobs();
-      }
-
-      // Draw background base color
-      ctx.fillStyle = '#06010a';
-      ctx.fillRect(0, 0, width, height);
-
-      // Save context to apply heavy blur
-      ctx.save();
-      ctx.filter = 'blur(120px)';
-      ctx.globalCompositeOperation = 'screen';
-
       const timeVal = timestamp || performance.now();
-
-      for (const blob of this.blobs) {
-        // Update positions using smooth sine waves to drift around
-        const dx = Math.sin(timeVal * blob.speedX + blob.angle) * (width * 0.3);
-        const dy = Math.cos(timeVal * blob.speedY + blob.angle) * (height * 0.3);
-        const blobX = (width / 2) + dx;
-        const blobY = (height / 2) + dy;
-        const radX = width * blob.rx;
-        const radY = height * blob.ry;
-        const maxRad = Math.max(radX, radY);
-
-        // Draw blob as a radial gradient
-        const grad = ctx.createRadialGradient(
-          blobX, blobY, 0,
-          blobX, blobY, maxRad
-        );
-        grad.addColorStop(0, blob.color);
-        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(blobX, blobY, maxRad, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      ctx.restore();
+      this.drawLiquidWaves(ctx, width, height, timeVal);
       return;
     }
 

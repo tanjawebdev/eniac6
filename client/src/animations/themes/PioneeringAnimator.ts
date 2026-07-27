@@ -34,7 +34,7 @@ export class PioneeringAnimator implements ThemeAnimator {
     ctx.fillStyle = config.backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
-    const rasterSize = Math.max(2, Math.round(2 + (config.pot0 / 1023) * 12));
+    const rasterSize = Math.max(5, Math.round(2 + (config.pot0 / 1023) * 12));
     const speedVal = 0.5 + (config.pot1 / 1023) * 4;
     const dotSize = Math.max(4, Math.round(1 + (config.pot2 / 1023) * rasterSize * 2));
     const numWalkers = Math.min(6, Math.max(1, Math.floor((config.pot3 / 1023) * 6) + 1));
