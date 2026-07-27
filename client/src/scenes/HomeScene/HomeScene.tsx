@@ -149,7 +149,7 @@ export function HomeScene() {
             </p>
             <p
               className="home-quote-author"
-              style={{ animationDelay: `${quoteWords.length * 28 + 120}ms` }}
+              style={{ animationDelay: `${quoteWords.length * 28 + 350}ms` }}
             >
               – {currentQuote.author} <span className="home-quote-source">{currentQuote.source}</span>
             </p>
