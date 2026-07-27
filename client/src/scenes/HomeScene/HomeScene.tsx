@@ -37,6 +37,7 @@ export function HomeScene() {
   }, [allInserted]);
 
   const currentQuote = ALL_INSERTED_QUOTES[quoteIndex] || ALL_INSERTED_QUOTES[0];
+  const quoteWords = currentQuote.quote.split(' ');
 
   // 1. Clear selected programmer if no banana plugs are connected (prevent cards from headlining on card inserts)
   useEffect(() => {
@@ -134,9 +135,22 @@ export function HomeScene() {
           ENIAC 6
         </h1>
         {allInserted ? (
-          <div className={`home-quote-block ${isFading ? 'fade-out' : 'fade-in'}`}>
-            <p className="home-quote-text">{currentQuote.quote}</p>
-            <p className="home-quote-author">
+          <div key={quoteIndex} className={`home-quote-block ${isFading ? 'fade-out' : 'fade-in'}`}>
+            <p className="home-quote-text">
+              {quoteWords.map((word, idx) => (
+                <span
+                  key={idx}
+                  className="quote-word"
+                  style={{ animationDelay: `${idx * 28}ms` }}
+                >
+                  {word}{' '}
+                </span>
+              ))}
+            </p>
+            <p
+              className="home-quote-author"
+              style={{ animationDelay: `${quoteWords.length * 28 + 120}ms` }}
+            >
               – {currentQuote.author} <span className="home-quote-source">{currentQuote.source}</span>
             </p>
           </div>

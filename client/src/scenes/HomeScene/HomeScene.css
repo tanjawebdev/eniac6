@@ -181,8 +181,8 @@
 /* All-Inserted Changing Quotes Section */
 .home-quote-block {
   position: absolute;
-  bottom: 22%;
-  right: 160px;
+  bottom: 25%;
+  right: 210px;
   width: 1100px;
   max-width: 1100px;
   display: flex;
@@ -211,8 +211,27 @@
   color: #ffffff;
   margin-bottom: 24px;
   word-break: break-word;
-  white-space: pre-line;
   text-align: left;
+}
+
+.quote-word {
+  display: inline-block;
+  white-space: pre;
+  opacity: 0;
+  transform: translateY(22px);
+  animation: reveal-word 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes reveal-word {
+  0% {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .home-quote-author {
@@ -222,6 +241,9 @@
   line-height: 1.3;
   color: #ffffff;
   text-align: left;
+  opacity: 0;
+  transform: translateY(22px);
+  animation: reveal-word 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .home-quote-source {
