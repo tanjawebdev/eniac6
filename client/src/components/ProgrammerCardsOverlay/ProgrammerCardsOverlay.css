@@ -130,7 +130,7 @@
   filter: grayscale(100%) contrast(110%);
 }
 
-.all-inserted .overlay-programmer-card.inserted span {
+.all-inserted.theme-none .overlay-programmer-card.inserted span {
   color: #ffffff !important;
   font-size: 55px !important;
   font-weight: 600 !important;

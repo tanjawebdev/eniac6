@@ -43,7 +43,7 @@
 }
 
 .all-inserted .home-header-text .text-light {
-  color: #000000;
+  color: #000000 !important;
   opacity: 0.4;
 }
 

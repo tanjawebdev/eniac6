@@ -37,14 +37,14 @@
 /* ---- Header Row ---- */
 .quote-block-header {
   display: grid;
-  grid-template-columns: 160px 1fr auto;
+  grid-template-columns: 180px 1fr auto;
   align-items: center;
   border-bottom: 3px solid rgba(255, 255, 255, 1);
 }
 
 .quote-block-portrait {
-  width: 160px;
-  height: 160px;
+  width: 180px;
+  height: 180px;
   background: rgba(255, 255, 255, 0.08);
   border-right: 3px solid rgba(255, 255, 255, 1);
   display: flex;
@@ -62,8 +62,8 @@
 .quote-block-name {
   padding: 0 40px;
   font-family: var(--font-mono);
-  font-size: 38px;
-  font-weight: 700;
+  font-size: 60px;
+  font-weight: 500;
   letter-spacing: 0.06em;
   color: #ffffff;
   text-transform: uppercase;
@@ -75,7 +75,7 @@
 .quote-block-years {
   padding: 0 40px;
   font-family: var(--font-mono);
-  font-size: 38px;
+  font-size: 60px;
   font-weight: 500;
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.7);
@@ -88,64 +88,86 @@
 
 /* ---- Quote Area ---- */
 .quote-block-quote {
-  padding: 50px 60px 50px 60px;
+  padding: 90px 60px 100px 60px;
   position: relative;
   border-bottom: 3px solid rgba(255, 255, 255, 1);
 }
 
 .quote-block-mark {
   font-family: var(--font-display);
-  font-size: 140px;
+  font-size: 200px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 1);
   line-height: 0.5;
   position: absolute;
-  top: 45px;
-  left: 20px;
+  top: 140px;
+  left: 100px;
   user-select: none;
 }
 
 .quote-block-text {
-  font-family: var(--font-display);
-  font-size: 68px;
-  font-weight: 600;
-  line-height: 1.2;
+  font-family: var(--font-mono);
+  font-size: 100px;
+  font-weight: 400;
+  line-height: 1.25;
   color: #ffffff;
   margin: 0;
-  padding-left: 50px;
+  padding-left: 160px;
+}
+
+.quote-block-text .quote-word {
+  display: inline-block;
+  white-space: pre;
+  opacity: 0;
+  transform: translateY(22px);
+  animation: reveal-word 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes reveal-word {
+  0% {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ---- Context Section ---- */
 .quote-block-context {
-  padding: 35px 60px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  padding: 60px 110px;
+  border-bottom: 3px solid rgba(255, 255, 255, 1);
 }
 
 .quote-block-context-label {
   font-family: var(--font-mono);
-  font-size: 38px;
+  font-size: 55px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 1);
   letter-spacing: 0.04em;
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .quote-block-context-text {
   font-family: var(--font-mono);
-  font-size: 38px;
+  font-size: 55px;
   font-weight: 400;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 1);
   margin: 0;
 }
 
 /* ---- Source Line ---- */
 .quote-block-source {
-  padding: 25px 60px;
+  padding: 60px 110px;
   font-family: var(--font-mono);
-  font-size: 24px;
+  font-size: 35px;
   font-weight: 400;
   letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.7);
 }

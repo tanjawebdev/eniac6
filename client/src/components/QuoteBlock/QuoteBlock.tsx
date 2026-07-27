@@ -19,6 +19,8 @@ export function QuoteBlock() {
     ? 'Direct Quote'
     : 'Source';
 
+  const words = quoteEntry.quote.split(' ');
+
   return (
     <div className="quote-block">
       {/* Header: Portrait | Name | Years */}
@@ -27,7 +29,7 @@ export function QuoteBlock() {
           <img src={programmer.portrait} alt={programmer.fullName} />
         </div>
         <div className="quote-block-name">
-          {programmer.fullName.toUpperCase()}
+          {programmer.name.toUpperCase()}
         </div>
         <div className="quote-block-years">
           {programmer.born} – {programmer.died}
@@ -37,7 +39,17 @@ export function QuoteBlock() {
       {/* Quote area */}
       <div className="quote-block-quote">
         <span className="quote-block-mark">"</span>
-        <p className="quote-block-text">{quoteEntry.quote}</p>
+        <p className="quote-block-text" key={`${selectedProgrammer}-${selectedTheme}`}>
+          {words.map((word, idx) => (
+            <span
+              key={idx}
+              className="quote-word"
+              style={{ animationDelay: `${idx * 28 + 150}ms` }}
+            >
+              {word}{' '}
+            </span>
+          ))}
+        </p>
       </div>
 
       {/* Context section */}
