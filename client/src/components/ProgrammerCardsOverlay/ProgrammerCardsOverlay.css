@@ -83,7 +83,7 @@
 }
 
 /* All inserted cards special style (when all 6 cards are inserted on Home screen) */
-.all-inserted .overlay-programmer-card.inserted {
+.all-inserted.theme-none .overlay-programmer-card.inserted {
   --accent-color: #ffffff !important;
   --accent-glow: rgba(255, 255, 255, 0.25) !important;
   width: 380px !important;

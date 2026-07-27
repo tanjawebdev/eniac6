@@ -18,6 +18,9 @@ export function Hud() {
       <span className="home-header-text-inside">
         {insertedCount}<span className="text-light">/6 </span>programmers inserted
       </span>
+      <div className="all-inserted-home-prompt">
+        press HOME to see them all together
+      </div>
     </div>
   );
 }

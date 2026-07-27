@@ -16,11 +16,9 @@ export function AppShell() {
   const activeColor = useAppStore((state) => state.activeColor);
   const selectedTheme = useAppStore((state) => state.selectedTheme);
   const selectedProgKey = useAppStore((state) => state.selectedProgrammer);
-  const currentScene = useAppStore((state) => state.currentScene);
   const nfcStates = useHardwareStore((state) => state.nfc);
 
   const allInserted =
-    currentScene === 'home' &&
     nfcStates.length === 6 &&
     nfcStates.every((n) => n.present && n.uid);
 

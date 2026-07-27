@@ -49,7 +49,7 @@
 }
 
 /* Soft-light blend mode when all cards are inserted */
-.all-inserted .overlay-texture {
+.all-inserted.theme-none .overlay-texture {
   mix-blend-mode: soft-light;
   opacity: 0.6;
 }
