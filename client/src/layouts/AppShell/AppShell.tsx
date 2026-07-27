@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../../stores/appStore';
+import { useHardwareStore } from '../../stores/hardwareStore';
 import { CanvasBackground } from '../../components/CanvasBackground/CanvasBackground';
 import { SceneManager } from '../../components/SceneManager/SceneManager';
 import { GlobalOverlay } from '../../components/GlobalOverlay/GlobalOverlay';
@@ -15,6 +16,14 @@ export function AppShell() {
   const activeColor = useAppStore((state) => state.activeColor);
   const selectedTheme = useAppStore((state) => state.selectedTheme);
   const selectedProgKey = useAppStore((state) => state.selectedProgrammer);
+  const currentScene = useAppStore((state) => state.currentScene);
+  const nfcStates = useHardwareStore((state) => state.nfc);
+
+  const allInserted =
+    currentScene === 'home' &&
+    nfcStates.length === 6 &&
+    nfcStates.every((n) => n.present && n.uid);
+
   const [scale, setScale] = useState(1);
 
   // Dynamic scale calculation to fit portrait 4K screen (2160x3840) on developer screens
@@ -91,7 +100,7 @@ export function AppShell() {
 
   return (
     <div className={`app-shell-container ${devScale ? 'scaled-mode' : ''}`}>
-      <div className={`app-shell ${selectedTheme ? 'is-theme' : ''} theme-${selectedTheme || 'none'}`} style={shellStyle}>
+      <div className={`app-shell ${selectedTheme ? 'is-theme' : ''} ${allInserted ? 'all-inserted' : ''} theme-${selectedTheme || 'none'}`} style={shellStyle}>
         {/* Particle/Shape Animation Canvas */}
         <CanvasBackground />
 

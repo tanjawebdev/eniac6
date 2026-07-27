@@ -47,3 +47,9 @@
 .theme-recognition .overlay-texture {
   mix-blend-mode: difference;
 }
+
+/* Soft-light blend mode when all cards are inserted */
+.all-inserted .overlay-texture {
+  mix-blend-mode: soft-light;
+  opacity: 0.6;
+}

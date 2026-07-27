@@ -96,6 +96,11 @@
   user-select: none;
   writing-mode: vertical-rl;
   text-orientation: mixed;
+  transition: opacity 0.5s ease-out;
+}
+
+.all-inserted .bg-digits {
+  opacity: 0;
 }
 
 /* Horizontal grey slider handles */
@@ -114,6 +119,10 @@
   animation-iteration-count: infinite;
   animation-timing-function: ease-in-out;
   opacity: 0;
+}
+
+.all-inserted .bg-slider-handle {
+  background: #ffffff45;
 }
 
 @keyframes pulse-handle {
