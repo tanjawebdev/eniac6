@@ -63,8 +63,16 @@ export function ProgrammerCardsOverlay() {
             style={{
               left: `${pos.x}px`,
               top: `${pos.y}px`,
-              '--accent-color': isNfcIn ? prog.color : 'rgba(255, 255, 255, 0.12)',
-              '--accent-glow': isNfcIn ? `${prog.color}40` : 'rgba(255, 255, 255, 0.05)',
+              '--accent-color': allInserted
+                ? '#ffffff'
+                : isNfcIn
+                ? prog.color
+                : 'rgba(255, 255, 255, 0.12)',
+              '--accent-glow': allInserted
+                ? 'rgba(255, 255, 255, 0.25)'
+                : isNfcIn
+                ? `${prog.color}40`
+                : 'rgba(255, 255, 255, 0.05)',
             } as React.CSSProperties}
             onClick={() => handleCardClick(prog.key)}
           >
