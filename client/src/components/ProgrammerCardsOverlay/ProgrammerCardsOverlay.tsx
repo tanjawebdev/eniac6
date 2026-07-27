@@ -40,12 +40,17 @@ export function ProgrammerCardsOverlay() {
   const isThemeActive = currentScene === 'theme' && !!selectedTheme;
   const showQuoteBlock = isThemeActive && !!selectedProgrammer;
 
+  const allInserted =
+    currentScene === 'home' &&
+    nfcStates.length === 6 &&
+    nfcStates.every((n) => n.present && n.uid);
+
   return (
     <div className={`programmer-cards-overlay ${isThemeActive ? 'programming-theme-mode' : ''}`}>
       {PROGRAMMER_LIST.map((prog) => {
         const isNfcIn = nfcStates.some((n) => n.present && n.uid === prog.uid);
         const pos = CARD_POSITIONS[prog.key];
-        const displayName = prog.key === 'wescoff' ? 'MARYL' : prog.firstName.toUpperCase();
+        const displayName = prog.firstName.toUpperCase();
 
         // Hide the selected programmer's card when quote block is showing
         const isSelected = selectedProgrammer === prog.key;
@@ -54,7 +59,7 @@ export function ProgrammerCardsOverlay() {
         return (
           <div
             key={prog.key}
-            className={`overlay-programmer-card ${isNfcIn ? 'inserted' : ''} ${hideCard ? 'hidden-by-quote' : ''}`}
+            className={`overlay-programmer-card ${isNfcIn ? 'inserted' : ''} ${allInserted ? 'all-inserted' : ''} ${hideCard ? 'hidden-by-quote' : ''}`}
             style={{
               left: `${pos.x}px`,
               top: `${pos.y}px`,
@@ -63,6 +68,11 @@ export function ProgrammerCardsOverlay() {
             } as React.CSSProperties}
             onClick={() => handleCardClick(prog.key)}
           >
+            {allInserted && (
+              <div className="card-portrait-wrapper">
+                <img src={prog.portrait} alt={prog.fullName} className="card-portrait-img" />
+              </div>
+            )}
             <span>{displayName}</span>
           </div>
         );
