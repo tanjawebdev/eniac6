@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore, DEFAULT_ACTIVE_COLOR } from '../../stores/appStore';
 import { useHardwareStore } from '../../stores/hardwareStore';
 import { THEME_IDS } from '@shared/constants';
+import ALL_INSERTED_QUOTES from '../../data/all_inserted_quotes.json';
 import './HomeScene.css';
 
 export function HomeScene() {
@@ -13,6 +14,29 @@ export function HomeScene() {
 
   // Subscribe to hardware state
   const bananas = useHardwareStore((state) => state.banana);
+  const nfcStates = useHardwareStore((state) => state.nfc);
+
+  const allInserted = nfcStates.length === 6 && nfcStates.every((n) => n.present && n.uid);
+
+  // Quote rotation state for all-inserted mode
+  const [quoteIndex, setQuoteIndex] = useState(0);
+  const [isFading, setIsFading] = useState(false);
+
+  useEffect(() => {
+    if (!allInserted) return;
+
+    const interval = setInterval(() => {
+      setIsFading(true);
+      setTimeout(() => {
+        setQuoteIndex((prev) => (prev + 1) % ALL_INSERTED_QUOTES.length);
+        setIsFading(false);
+      }, 500);
+    }, 20000);
+
+    return () => clearInterval(interval);
+  }, [allInserted]);
+
+  const currentQuote = ALL_INSERTED_QUOTES[quoteIndex] || ALL_INSERTED_QUOTES[0];
 
   // 1. Clear selected programmer if no banana plugs are connected (prevent cards from headlining on card inserts)
   useEffect(() => {
@@ -102,18 +126,27 @@ export function HomeScene() {
         })}
       </div>
 
-      {/* Big typography overlay */}
+      {/* Big typography overlay or All-Inserted Quotes */}
       <div className="home-headlines">
         <h1 className="home-h1">
           THE
           <br />
           ENIAC 6
         </h1>
-        <h2 className="home-h2">
-          BEHIND THE
-          <br />
-          MACHINE
-        </h2>
+        {allInserted ? (
+          <div className={`home-quote-block ${isFading ? 'fade-out' : 'fade-in'}`}>
+            <p className="home-quote-text">{currentQuote.quote}</p>
+            <p className="home-quote-author">
+              – {currentQuote.author} <span className="home-quote-source">{currentQuote.source}</span>
+            </p>
+          </div>
+        ) : (
+          <h2 className="home-h2">
+            BEHIND THE
+            <br />
+            MACHINE
+          </h2>
+        )}
       </div>
 
       {/* Bottom Center: ENIAC details */}
