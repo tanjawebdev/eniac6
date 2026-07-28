@@ -23,11 +23,17 @@
 
 .is-theme .home-header-text-inside {
   background-color: rgba(0, 0, 0, 1);
+  color: var(--active-color);
 }
 
 .home-header-text .text-light {
   opacity: 0.5;
   transition: opacity 0.5s var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)), color 0.5s var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.is-theme .home-header-text .text-light {
+  color: var(--active-color) !important;
+  opacity: 0.8;
 }
 
 /* All-Inserted header styling (white background, black text, 58px font size with scaling transition) */
@@ -54,7 +60,7 @@
   font-size: 52px;
   font-weight: 500;
   letter-spacing: 0.08em;
-  text-transform: lowercase;
+  text-transform: none;
   color: #ffffff;
   opacity: 0;
   transform: translateY(-8px);
