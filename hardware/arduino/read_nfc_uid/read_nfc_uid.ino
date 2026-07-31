@@ -1,5 +1,5 @@
 /*
-  ENIAC Six – NFC-UID und Taster auslesen
+  ENIAC Six – NFC-UID und zwei Taster auslesen
 
   PN532 -> Arduino Mega:
   SCK   -> 52
@@ -9,9 +9,16 @@
   VCC   -> 5V
   GND   -> GND
 
-  Taster -> Arduino Mega:
+  Button 1:
   Kabel 1 -> Pin 7
   Kabel 2 -> GND
+
+  Button 2:
+  Kabel 1 -> Pin 8
+  Kabel 2 -> GND
+
+  Beide Buttons können dieselbe GND-Schiene
+  auf dem Breadboard verwenden.
 */
 
 #include <SPI.h>
@@ -20,23 +27,38 @@
 // PN532
 #define PN532_SS 53
 
-// Taster
-#define BUTTON_PIN 7
+// Buttons
+#define BUTTON_1_PIN 7
+#define BUTTON_2_PIN 8
 
 Adafruit_PN532 nfc(PN532_SS);
 
-// Verhindert mehrfache NFC-Ausgaben
+// Verhindert mehrfache NFC-Ausgaben,
+// solange dieselbe Karte auf dem Leser liegt.
 bool cardPresent = false;
 
-// Variablen für die Taster-Entprellung
-bool lastRawButtonState = HIGH;
-bool stableButtonState = HIGH;
+// Button 1
+bool lastRawButtonState1 = HIGH;
+bool stableButtonState1 = HIGH;
+unsigned long lastDebounceTime1 = 0;
 
-unsigned long lastDebounceTime = 0;
+// Button 2
+bool lastRawButtonState2 = HIGH;
+bool stableButtonState2 = HIGH;
+unsigned long lastDebounceTime2 = 0;
+
+// Entprellzeit für beide Buttons
 const unsigned long debounceDelay = 30;
 
 // Funktionsdeklarationen
-void readButton();
+void readButtons();
+void readButton(
+  byte pin,
+  const char* buttonName,
+  bool& lastRawState,
+  bool& stableState,
+  unsigned long& lastDebounceTime
+);
 void readNfc();
 
 void setup() {
@@ -47,12 +69,13 @@ void setup() {
   }
 
   /*
-    Der interne Pull-up-Widerstand wird aktiviert.
+    Die internen Pull-up-Widerstände werden aktiviert.
 
-    Taster nicht gedrückt: HIGH
-    Taster gedrückt:       LOW
+    Button nicht gedrückt: HIGH
+    Button gedrückt:       LOW
   */
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(BUTTON_1_PIN, INPUT_PULLUP);
+  pinMode(BUTTON_2_PIN, INPUT_PULLUP);
 
   Serial.println(F("PN532 wird initialisiert ..."));
 
@@ -64,9 +87,12 @@ void setup() {
     Serial.println(F("PN532 nicht gefunden."));
     Serial.println(F("Verkabelung und SPI-Schalter prüfen."));
 
+    /*
+      Die Buttons können auch dann getestet werden,
+      wenn der NFC-Leser nicht gefunden wird.
+    */
     while (true) {
-      // Der Taster kann auch im Fehlerfall getestet werden
-      readButton();
+      readButtons();
       delay(5);
     }
   }
@@ -82,37 +108,69 @@ void setup() {
   nfc.SAMConfig();
 
   Serial.println(F("--------------------------------"));
-  Serial.println(F("NFC-Leser und Taster bereit."));
-  Serial.println(F("Bitte NFC-Tag auflegen oder Taster drücken."));
+  Serial.println(F("NFC-Leser und zwei Buttons bereit."));
+  Serial.println(F("Bitte NFC-Tag auflegen oder Button drücken."));
   Serial.println(F("--------------------------------"));
 }
 
 void loop() {
-  readButton();
+  readButtons();
   readNfc();
 }
 
 /*
-  Taster auslesen und mechanisches Prellen unterdrücken.
+  Beide Buttons auslesen.
 */
-void readButton() {
-  bool currentReading = digitalRead(BUTTON_PIN);
+void readButtons() {
+  readButton(
+    BUTTON_1_PIN,
+    "Button 1",
+    lastRawButtonState1,
+    stableButtonState1,
+    lastDebounceTime1
+  );
+
+  readButton(
+    BUTTON_2_PIN,
+    "Button 2",
+    lastRawButtonState2,
+    stableButtonState2,
+    lastDebounceTime2
+  );
+}
+
+/*
+  Einen Button auslesen und mechanisches Prellen unterdrücken.
+
+  Die Zustandsvariablen werden als Referenzen übergeben,
+  damit jeder Button seine eigenen Zustände besitzt.
+*/
+void readButton(
+  byte pin,
+  const char* buttonName,
+  bool& lastRawState,
+  bool& stableState,
+  unsigned long& lastDebounceTime
+) {
+  bool currentReading = digitalRead(pin);
 
   // Rohzustand hat sich geändert
-  if (currentReading != lastRawButtonState) {
+  if (currentReading != lastRawState) {
     lastDebounceTime = millis();
-    lastRawButtonState = currentReading;
+    lastRawState = currentReading;
   }
 
   // Zustand muss mindestens debounceDelay stabil bleiben
   if ((millis() - lastDebounceTime) >= debounceDelay) {
-    if (currentReading != stableButtonState) {
-      stableButtonState = currentReading;
+    if (currentReading != stableState) {
+      stableState = currentReading;
 
-      if (stableButtonState == LOW) {
-        Serial.println(F("Taster gedrückt!"));
+      Serial.print(buttonName);
+
+      if (stableState == LOW) {
+        Serial.println(F(" gedrückt!"));
       } else {
-        Serial.println(F("Taster losgelassen."));
+        Serial.println(F(" losgelassen."));
       }
     }
   }
@@ -126,8 +184,8 @@ void readNfc() {
   uint8_t uidLength = 0;
 
   /*
-    Kurzer Timeout, damit die NFC-Abfrage den Taster
-    nicht merklich blockiert.
+    Kurzer Timeout, damit die NFC-Abfrage
+    die Buttons nicht merklich blockiert.
   */
   bool success = nfc.readPassiveTargetID(
     PN532_MIFARE_ISO14443A,
