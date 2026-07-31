@@ -1,24 +1,29 @@
 /*
-  ENIAC Six – NFC-UID und zwei Taster auslesen
+  ENIAC Six – NFC, zwei Buttons, Kontaktsensor und Potentiometer
 
-  PN532 -> Arduino Mega:
-  SCK   -> 52
-  MISO  -> 50
-  MOSI  -> 51
-  SS    -> 53
-  VCC   -> 5V
-  GND   -> GND
+  PN532:
+  SCK  -> 52
+  MISO -> 50
+  MOSI -> 51
+  SS   -> 53
+  VCC  -> 5V
+  GND  -> GND
 
   Button 1:
-  Kabel 1 -> Pin 7
-  Kabel 2 -> GND
+  Pin 7 und GND
 
   Button 2:
-  Kabel 1 -> Pin 8
-  Kabel 2 -> GND
+  Pin 8 und GND
 
-  Beide Buttons können dieselbe GND-Schiene
-  auf dem Breadboard verwenden.
+  Kontaktsensor:
+  COM -> GND
+  NO  -> Pin 9
+  NC  -> nicht verbunden
+
+  Potentiometer:
+  äußerer Pin  -> 5V
+  mittlerer Pin -> A0
+  äußerer Pin  -> GND
 */
 
 #include <SPI.h>
@@ -27,14 +32,17 @@
 // PN532
 #define PN532_SS 53
 
-// Buttons
+// Digitale Eingänge
 #define BUTTON_1_PIN 7
 #define BUTTON_2_PIN 8
+#define CONTACT_SENSOR_PIN 9
+
+// Analoger Eingang
+#define POTENTIOMETER_PIN A0
 
 Adafruit_PN532 nfc(PN532_SS);
 
-// Verhindert mehrfache NFC-Ausgaben,
-// solange dieselbe Karte auf dem Leser liegt.
+bool nfcAvailable = false;
 bool cardPresent = false;
 
 // Button 1
@@ -47,18 +55,30 @@ bool lastRawButtonState2 = HIGH;
 bool stableButtonState2 = HIGH;
 unsigned long lastDebounceTime2 = 0;
 
-// Entprellzeit für beide Buttons
+// Kontaktsensor
+bool lastRawContactState = HIGH;
+bool stableContactState = HIGH;
+unsigned long lastContactDebounceTime = 0;
+
 const unsigned long debounceDelay = 30;
 
+// Potentiometer
+unsigned long lastPotentiometerTime = 0;
+const unsigned long potentiometerInterval = 100;
+int lastPotentiometerValue = -1;
+
 // Funktionsdeklarationen
-void readButtons();
-void readButton(
+void readDigitalInputs();
+
+void readDigitalInput(
   byte pin,
-  const char* buttonName,
+  const char* inputName,
   bool& lastRawState,
   bool& stableState,
   unsigned long& lastDebounceTime
 );
+
+void readPotentiometer();
 void readNfc();
 
 void setup() {
@@ -68,14 +88,9 @@ void setup() {
     delay(10);
   }
 
-  /*
-    Die internen Pull-up-Widerstände werden aktiviert.
-
-    Button nicht gedrückt: HIGH
-    Button gedrückt:       LOW
-  */
   pinMode(BUTTON_1_PIN, INPUT_PULLUP);
   pinMode(BUTTON_2_PIN, INPUT_PULLUP);
+  pinMode(CONTACT_SENSOR_PIN, INPUT_PULLUP);
 
   Serial.println(F("PN532 wird initialisiert ..."));
 
@@ -84,45 +99,44 @@ void setup() {
   uint32_t versionData = nfc.getFirmwareVersion();
 
   if (!versionData) {
-    Serial.println(F("PN532 nicht gefunden."));
-    Serial.println(F("Verkabelung und SPI-Schalter prüfen."));
+    nfcAvailable = false;
 
-    /*
-      Die Buttons können auch dann getestet werden,
-      wenn der NFC-Leser nicht gefunden wird.
-    */
-    while (true) {
-      readButtons();
-      delay(5);
-    }
+    Serial.println(F("PN532 nicht gefunden."));
+    Serial.println(F("Andere Eingaben werden trotzdem ausgelesen."));
+    Serial.println(F("Verkabelung und SPI-Schalter prüfen."));
+  } else {
+    nfcAvailable = true;
+
+    Serial.print(F("PN532 erkannt. Chip: PN5"));
+    Serial.println((versionData >> 24) & 0xFF, HEX);
+
+    Serial.print(F("Firmware: "));
+    Serial.print((versionData >> 16) & 0xFF, DEC);
+    Serial.print('.');
+    Serial.println((versionData >> 8) & 0xFF, DEC);
+
+    nfc.SAMConfig();
   }
 
-  Serial.print(F("PN532 erkannt. Chip: PN5"));
-  Serial.println((versionData >> 24) & 0xFF, HEX);
-
-  Serial.print(F("Firmware: "));
-  Serial.print((versionData >> 16) & 0xFF, DEC);
-  Serial.print('.');
-  Serial.println((versionData >> 8) & 0xFF, DEC);
-
-  nfc.SAMConfig();
-
   Serial.println(F("--------------------------------"));
-  Serial.println(F("NFC-Leser und zwei Buttons bereit."));
-  Serial.println(F("Bitte NFC-Tag auflegen oder Button drücken."));
+  Serial.println(F("Eingaben bereit."));
   Serial.println(F("--------------------------------"));
 }
 
 void loop() {
-  readButtons();
-  readNfc();
+  readDigitalInputs();
+  readPotentiometer();
+
+  if (nfcAvailable) {
+    readNfc();
+  }
 }
 
 /*
-  Beide Buttons auslesen.
+  Buttons und Kontaktsensor auslesen.
 */
-void readButtons() {
-  readButton(
+void readDigitalInputs() {
+  readDigitalInput(
     BUTTON_1_PIN,
     "Button 1",
     lastRawButtonState1,
@@ -130,49 +144,76 @@ void readButtons() {
     lastDebounceTime1
   );
 
-  readButton(
+  readDigitalInput(
     BUTTON_2_PIN,
     "Button 2",
     lastRawButtonState2,
     stableButtonState2,
     lastDebounceTime2
   );
+
+  readDigitalInput(
+    CONTACT_SENSOR_PIN,
+    "Kontaktsensor",
+    lastRawContactState,
+    stableContactState,
+    lastContactDebounceTime
+  );
 }
 
 /*
-  Einen Button auslesen und mechanisches Prellen unterdrücken.
-
-  Die Zustandsvariablen werden als Referenzen übergeben,
-  damit jeder Button seine eigenen Zustände besitzt.
+  Digitalen Eingang auslesen und entprellen.
 */
-void readButton(
+void readDigitalInput(
   byte pin,
-  const char* buttonName,
+  const char* inputName,
   bool& lastRawState,
   bool& stableState,
   unsigned long& lastDebounceTime
 ) {
   bool currentReading = digitalRead(pin);
 
-  // Rohzustand hat sich geändert
   if (currentReading != lastRawState) {
     lastDebounceTime = millis();
     lastRawState = currentReading;
   }
 
-  // Zustand muss mindestens debounceDelay stabil bleiben
   if ((millis() - lastDebounceTime) >= debounceDelay) {
     if (currentReading != stableState) {
       stableState = currentReading;
 
-      Serial.print(buttonName);
+      Serial.print(inputName);
 
       if (stableState == LOW) {
-        Serial.println(F(" gedrückt!"));
+        Serial.println(F(" betätigt!"));
       } else {
         Serial.println(F(" losgelassen."));
       }
     }
+  }
+}
+
+/*
+  Potentiometer auslesen.
+*/
+void readPotentiometer() {
+  if (millis() - lastPotentiometerTime < potentiometerInterval) {
+    return;
+  }
+
+  lastPotentiometerTime = millis();
+
+  int potentiometerValue = analogRead(POTENTIOMETER_PIN);
+
+  // Nur ausgeben, wenn sich der Wert merklich geändert hat
+  if (
+    lastPotentiometerValue == -1 ||
+    abs(potentiometerValue - lastPotentiometerValue) >= 3
+  ) {
+    lastPotentiometerValue = potentiometerValue;
+
+    Serial.print(F("Potentiometer: "));
+    Serial.println(potentiometerValue);
   }
 }
 
@@ -183,10 +224,6 @@ void readNfc() {
   uint8_t uid[7];
   uint8_t uidLength = 0;
 
-  /*
-    Kurzer Timeout, damit die NFC-Abfrage
-    die Buttons nicht merklich blockiert.
-  */
   bool success = nfc.readPassiveTargetID(
     PN532_MIFARE_ISO14443A,
     uid,
@@ -199,7 +236,6 @@ void readNfc() {
     return;
   }
 
-  // Dieselbe aufgelegte Karte nicht ständig ausgeben
   if (cardPresent) {
     return;
   }
