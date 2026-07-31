@@ -1,8 +1,7 @@
 /*
-  PN532 UID-Ausleseprogramm
-  Arduino Mega 2560, Hardware-SPI
+  ENIAC Six – NFC-UID und Taster auslesen
 
-  PN532 -> Mega:
+  PN532 -> Arduino Mega:
   SCK   -> 52
   MISO  -> 50
   MOSI  -> 51
@@ -10,18 +9,35 @@
   VCC   -> 5V
   GND   -> GND
 
-  IRQ und RSTO bleiben unverbunden.
+  Taster -> Arduino Mega:
+  Kabel 1 -> Pin 7
+  Kabel 2 -> GND
 */
 
 #include <SPI.h>
 #include <Adafruit_PN532.h>
 
+// PN532
 #define PN532_SS 53
 
-// Hardware-SPI verwenden
+// Taster
+#define BUTTON_PIN 7
+
 Adafruit_PN532 nfc(PN532_SS);
 
+// Verhindert mehrfache NFC-Ausgaben
 bool cardPresent = false;
+
+// Variablen für die Taster-Entprellung
+bool lastRawButtonState = HIGH;
+bool stableButtonState = HIGH;
+
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 30;
+
+// Funktionsdeklarationen
+void readButton();
+void readNfc();
 
 void setup() {
   Serial.begin(115200);
@@ -29,6 +45,14 @@ void setup() {
   while (!Serial) {
     delay(10);
   }
+
+  /*
+    Der interne Pull-up-Widerstand wird aktiviert.
+
+    Taster nicht gedrückt: HIGH
+    Taster gedrückt:       LOW
+  */
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   Serial.println(F("PN532 wird initialisiert ..."));
 
@@ -38,10 +62,12 @@ void setup() {
 
   if (!versionData) {
     Serial.println(F("PN532 nicht gefunden."));
-    Serial.println(F("Verkabelung, Versorgung und SPI-Schalter prüfen."));
+    Serial.println(F("Verkabelung und SPI-Schalter prüfen."));
 
     while (true) {
-      delay(100);
+      // Der Taster kann auch im Fehlerfall getestet werden
+      readButton();
+      delay(5);
     }
   }
 
@@ -53,32 +79,69 @@ void setup() {
   Serial.print('.');
   Serial.println((versionData >> 8) & 0xFF, DEC);
 
-  // PN532 für das Lesen von Karten konfigurieren
   nfc.SAMConfig();
 
-  Serial.println(F("NFC-Leser bereit."));
-  Serial.println(F("Bitte NFC-Tag auflegen."));
+  Serial.println(F("--------------------------------"));
+  Serial.println(F("NFC-Leser und Taster bereit."));
+  Serial.println(F("Bitte NFC-Tag auflegen oder Taster drücken."));
   Serial.println(F("--------------------------------"));
 }
 
 void loop() {
+  readButton();
+  readNfc();
+}
+
+/*
+  Taster auslesen und mechanisches Prellen unterdrücken.
+*/
+void readButton() {
+  bool currentReading = digitalRead(BUTTON_PIN);
+
+  // Rohzustand hat sich geändert
+  if (currentReading != lastRawButtonState) {
+    lastDebounceTime = millis();
+    lastRawButtonState = currentReading;
+  }
+
+  // Zustand muss mindestens debounceDelay stabil bleiben
+  if ((millis() - lastDebounceTime) >= debounceDelay) {
+    if (currentReading != stableButtonState) {
+      stableButtonState = currentReading;
+
+      if (stableButtonState == LOW) {
+        Serial.println(F("Taster gedrückt!"));
+      } else {
+        Serial.println(F("Taster losgelassen."));
+      }
+    }
+  }
+}
+
+/*
+  NFC-Tag auslesen.
+*/
+void readNfc() {
   uint8_t uid[7];
   uint8_t uidLength = 0;
 
+  /*
+    Kurzer Timeout, damit die NFC-Abfrage den Taster
+    nicht merklich blockiert.
+  */
   bool success = nfc.readPassiveTargetID(
     PN532_MIFARE_ISO14443A,
     uid,
     &uidLength,
-    100
+    20
   );
 
   if (!success) {
-    // Karte wurde entfernt und darf erneut ausgegeben werden
     cardPresent = false;
     return;
   }
 
-  // Dieselbe aufgelegte Karte nicht ständig erneut ausgeben
+  // Dieselbe aufgelegte Karte nicht ständig ausgeben
   if (cardPresent) {
     return;
   }
