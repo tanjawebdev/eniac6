@@ -22,7 +22,7 @@
 
   Potentiometer:
   äußerer Pin  -> 5V
-  mittlerer Pin -> A0
+  mittlerer Pin -> A0 - A7
   äußerer Pin  -> GND
 */
 

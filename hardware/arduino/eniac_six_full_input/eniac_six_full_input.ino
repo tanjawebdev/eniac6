@@ -108,6 +108,19 @@ const uint8_t POT_PINS[POT_COUNT] = {
   A8, A9, A10, A11, A12, A13, A14, A15
 };
 
+/*
+  Hier zentral festlegen, welche Potentiometer aktiviert sind.
+
+  true  = Potentiometer wird gelesen und ausgegeben
+  false = Potentiometer wird vollständig übersprungen
+
+  Aktuell aktiv: Poti 1-8 auf A0-A7
+*/
+const bool POT_ENABLED[POT_COUNT] = {
+  true, true, true, true, true, true, true, true,
+  true, true, true, true, true, true, true, true
+};
+
 const uint8_t CABLE_PINS[CABLE_COUNT] = {22, 23, 24, 25, 26, 27};
 const uint8_t SOCKET_PINS[SOCKET_COUNT] = {30, 31, 32, 33, 34, 35, 36, 37};
 
@@ -120,7 +133,7 @@ constexpr unsigned long CABLE_DEBOUNCE_MS = 50;
 
 // Potentiometer werden nur bei einer merklichen Änderung ausgegeben.
 constexpr unsigned long POT_READ_INTERVAL_MS = 50;
-constexpr int POT_CHANGE_THRESHOLD = 4;
+constexpr int POT_CHANGE_THRESHOLD = 40;
 
 // Kabelmatrix
 constexpr unsigned long CABLE_SCAN_INTERVAL_MS = 20;
@@ -410,6 +423,11 @@ void readPotentiometers() {
   lastPotReadTime = now;
 
   for (uint8_t i = 0; i < POT_COUNT; i++) {
+    // Deaktivierte Potentiometer weder lesen noch ausgeben.
+    if (!POT_ENABLED[i]) {
+      continue;
+    }
+
     /*
       Der erste Messwert wird verworfen. Das reduziert Übersprechen,
       wenn der ADC zwischen verschiedenen Analogkanälen umschaltet.
