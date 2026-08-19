@@ -143,7 +143,7 @@ constexpr uint8_t MEGA_HARDWARE_SS_PIN = 53;
 
   Für den ersten Hardware-Test absichtlich auf false gesetzt.
 */
-constexpr bool NFC_SYSTEM_ENABLED = false;
+constexpr bool NFC_SYSTEM_ENABLED = true;
 
 const bool NFC_ENABLED[NFC_COUNT] = {
   true, true, true, true, false, false

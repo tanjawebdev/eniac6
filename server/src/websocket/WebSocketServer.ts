@@ -13,7 +13,6 @@ import type { HardwareEvent, HardwareEventTiming } from '../../../shared/events.
 export class WebSocketServerWrapper {
   private wss: WsServer;
   private clientCount = 0;
-  private lastPotLatencyLogTimes = new Array(16).fill(0);
 
   constructor(port: number) {
     this.wss = new WsServer({ port });
@@ -98,39 +97,9 @@ export class WebSocketServerWrapper {
         maxClientBufferedBytes,
       };
 
-      if (this.shouldLogLatency(event, serverSentAt)) {
-        const serialToState = this.duration(timing.serialReceivedAt, timing.stateAppliedAt);
-        const stateToWs = this.duration(timing.stateAppliedAt, serverSentAt);
-        const backendTotal = this.duration(timing.serialReceivedAt, serverSentAt);
-        console.log(
-          `[Latency Backend] ${this.eventLabel(event)} | Serial→State ${serialToState} | State→WS ${stateToWs} | total ${backendTotal} | WS queued ${maxClientBufferedBytes} B`,
-        );
-      }
-
       const msg: WSMessage = { type: 'hardware', event, timing: messageTiming };
       this.broadcast(msg);
     });
-  }
-
-  private shouldLogLatency(event: HardwareEvent, now: number): boolean {
-    if (event.type !== 'pot') return true;
-
-    if (now - this.lastPotLatencyLogTimes[event.id] < 250) return false;
-    this.lastPotLatencyLogTimes[event.id] = now;
-    return true;
-  }
-
-  private eventLabel(event: HardwareEvent): string {
-    if (event.type === 'pot') return `pot ${event.id + 1}`;
-    if (event.type === 'contact') return `contact ${event.id + 1}`;
-    if (event.type === 'button') return `button ${event.name}`;
-    if (event.type === 'nfc') return `nfc ${event.reader + 1}`;
-    return `banana ${event.theme}/${event.socket}`;
-  }
-
-  private duration(start: number | undefined, end: number | undefined): string {
-    if (start === undefined || end === undefined) return 'n/a';
-    return `${Math.max(0, end - start)} ms`;
   }
 
   /** Broadcast a message to all connected clients. */

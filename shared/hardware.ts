@@ -39,10 +39,10 @@ export function createDefaultHardwareState(): HardwareState {
   return {
     pots: Array(16).fill(0),
     banana: {
-      pioneering: { socket0: null, socket1: null },
-      programming: { socket0: null, socket1: null },
       recognition: { socket0: null, socket1: null },
       teamwork: { socket0: null, socket1: null },
+      programming: { socket0: null, socket1: null },
+      pioneering: { socket0: null, socket1: null },
     },
     contacts: Array(6).fill(false),
     buttons: {

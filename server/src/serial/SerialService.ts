@@ -42,14 +42,14 @@ const RECONNECT_DELAY_MS = 3000;
  * within the theme is simply socketId % 2.
  */
 const SOCKET_TO_THEME: readonly ThemeId[] = [
-  'pioneering',   // socket 0 (Arduino socket 1)
-  'pioneering',   // socket 1 (Arduino socket 2)
-  'programming',  // socket 2 (Arduino socket 3)
-  'programming',  // socket 3 (Arduino socket 4)
-  'teamwork',     // socket 4 (Arduino socket 5)
-  'teamwork',     // socket 5 (Arduino socket 6)
-  'recognition',  // socket 6 (Arduino socket 7)
-  'recognition',  // socket 7 (Arduino socket 8)
+  'recognition',   // socket 0 (Arduino socket 1)
+  'recognition',   // socket 1 (Arduino socket 2)
+  'teamwork',  // socket 2 (Arduino socket 3)
+  'teamwork',  // socket 3 (Arduino socket 4)
+  'programming',     // socket 4 (Arduino socket 5)
+  'programming',     // socket 5 (Arduino socket 6)
+  'pioneering',  // socket 6 (Arduino socket 7)
+  'pioneering',  // socket 7 (Arduino socket 8)
 ] as const;
 
 export class SerialService extends EventEmitter implements IHardwareSource {
