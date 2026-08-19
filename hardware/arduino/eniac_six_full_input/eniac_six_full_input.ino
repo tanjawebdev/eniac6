@@ -124,8 +124,47 @@ const bool POT_ENABLED[POT_COUNT] = {
 const uint8_t CABLE_PINS[CABLE_COUNT] = {22, 23, 24, 25, 26, 27};
 const uint8_t SOCKET_PINS[SOCKET_COUNT] = {30, 31, 32, 33, 34, 35, 36, 37};
 
-const uint8_t NFC_SS_PINS[NFC_COUNT] = {38, 39, 40, 41, 42, 43};
+const uint8_t NFC_SS_PINS[NFC_COUNT] = {38, 39, 44, 42, 43, 40};
 constexpr uint8_t MEGA_HARDWARE_SS_PIN = 53;
+
+/*
+  Hier zentral festlegen, welche NFC-Reader aktiviert sind.
+
+  true  = Reader wird initialisiert und abgefragt
+  false = Reader wird vollständig übersprungen
+
+  Reihenfolge: NFC 1 bis NFC 6
+*/
+/*
+  Globaler NFC-Hauptschalter.
+
+  false = kompletter NFC-/SPI-Teil bleibt aus (Diagnosemodus)
+  true  = die unten mit NFC_ENABLED aktivierten Reader werden verwendet
+
+  Für den ersten Hardware-Test absichtlich auf false gesetzt.
+*/
+constexpr bool NFC_SYSTEM_ENABLED = true;
+
+const bool NFC_ENABLED[NFC_COUNT] = {
+  true, true, true, true, false, false
+};
+
+/*
+  NFC-Initialisierungs-Debugging.
+
+  NFC_INIT_DEBUG = true  -> detaillierte Meldungen beim Start
+  NFC_DEBUG_READER = 4   -> nur Reader 4 detailliert protokollieren
+  NFC_DEBUG_READER = 0   -> alle aktivierten Reader detailliert protokollieren
+
+  getFirmwareVersion() ist der entscheidende Kommunikationstest mit dem PN532.
+  Für den Debug-Reader wird die Abfrage mehrfach versucht, damit man zwischen
+  einem einmaligen Kommunikationsfehler und einem dauerhaft nicht erreichbaren
+  Reader unterscheiden kann.
+*/
+constexpr bool NFC_INIT_DEBUG = true;
+constexpr uint8_t NFC_DEBUG_READER = 4;
+constexpr uint8_t NFC_FIRMWARE_RETRIES = 5;
+constexpr unsigned long NFC_FIRMWARE_RETRY_DELAY_MS = 150;
 
 // Entprellung für Buttons, Kontaktsensoren und Kabelverbindungen
 constexpr unsigned long DIGITAL_DEBOUNCE_MS = 30;
@@ -299,8 +338,79 @@ void initializeCableMatrix() {
   }
 }
 
+bool shouldDebugNfcReader(uint8_t readerIndex) {
+  if (!NFC_INIT_DEBUG) {
+    return false;
+  }
+
+  // 0 bedeutet: alle Reader detailliert debuggen.
+  return NFC_DEBUG_READER == 0 || NFC_DEBUG_READER == readerIndex + 1;
+}
+
+void deselectAllNfcReaders() {
+  for (uint8_t i = 0; i < NFC_COUNT; i++) {
+    digitalWrite(NFC_SS_PINS[i], HIGH);
+  }
+}
+
+void printNfcDebug(uint8_t readerIndex, const __FlashStringHelper* message) {
+  Serial.print(F("NFC_DEBUG,"));
+  Serial.print(readerIndex + 1);
+  Serial.print(',');
+  Serial.println(message);
+}
+
+uint32_t readNfcFirmwareWithDebug(uint8_t readerIndex) {
+  const bool debugThisReader = shouldDebugNfcReader(readerIndex);
+  const uint8_t attempts = debugThisReader ? NFC_FIRMWARE_RETRIES : 1;
+
+  uint32_t versionData = 0;
+
+  for (uint8_t attempt = 1; attempt <= attempts; attempt++) {
+    // Vor jedem Versuch sicherstellen, dass kein anderer PN532 selektiert ist.
+    deselectAllNfcReaders();
+    delay(5);
+
+    if (debugThisReader) {
+      Serial.print(F("NFC_DEBUG,"));
+      Serial.print(readerIndex + 1);
+      Serial.print(F(",FIRMWARE_ATTEMPT,"));
+      Serial.print(attempt);
+      Serial.print('/');
+      Serial.println(attempts);
+    }
+
+    versionData = NFC_READERS[readerIndex]->getFirmwareVersion();
+
+    if (debugThisReader) {
+      Serial.print(F("NFC_DEBUG,"));
+      Serial.print(readerIndex + 1);
+      Serial.print(F(",FIRMWARE_RAW,0x"));
+      Serial.println(versionData, HEX);
+    }
+
+    if (versionData != 0) {
+      if (debugThisReader && attempt > 1) {
+        Serial.print(F("NFC_DEBUG,"));
+        Serial.print(readerIndex + 1);
+        Serial.print(F(",RECOVERED_ON_ATTEMPT,"));
+        Serial.println(attempt);
+      }
+      break;
+    }
+
+    if (attempt < attempts) {
+      delay(NFC_FIRMWARE_RETRY_DELAY_MS);
+    }
+  }
+
+  return versionData;
+}
+
 void initializeNfcReaders() {
   // Alle Chip-Select-Leitungen zuerst sicher deaktivieren.
+  // Auch deaktivierte Reader bekommen ein festes HIGH auf SS,
+  // damit kein Chip-Select-Pin floatet.
   pinMode(MEGA_HARDWARE_SS_PIN, OUTPUT);
   digitalWrite(MEGA_HARDWARE_SS_PIN, HIGH);
 
@@ -309,36 +419,119 @@ void initializeNfcReaders() {
     digitalWrite(NFC_SS_PINS[i], HIGH);
   }
 
+  if (!NFC_SYSTEM_ENABLED) {
+    for (uint8_t i = 0; i < NFC_COUNT; i++) {
+      nfcAvailable[i] = false;
+    }
+    Serial.println(F("NFC_SYSTEM,DISABLED"));
+    return;
+  }
+
+  bool anyNfcEnabled = false;
+  for (uint8_t i = 0; i < NFC_COUNT; i++) {
+    if (NFC_ENABLED[i]) {
+      anyNfcEnabled = true;
+      break;
+    }
+  }
+
+  if (!anyNfcEnabled) {
+    Serial.println(F("NFC_SYSTEM,NO_READERS_ENABLED"));
+    return;
+  }
+
+  if (NFC_INIT_DEBUG) {
+    Serial.println(F("NFC_DEBUG,SPI,BEFORE_BEGIN"));
+  }
+
   SPI.begin();
+  deselectAllNfcReaders();
+
+  if (NFC_INIT_DEBUG) {
+    Serial.println(F("NFC_DEBUG,SPI,AFTER_BEGIN"));
+  }
 
   for (uint8_t i = 0; i < NFC_COUNT; i++) {
+    if (!NFC_ENABLED[i]) {
+      nfcAvailable[i] = false;
+      Serial.print(F("NFC_READER,"));
+      Serial.print(i + 1);
+      Serial.println(F(",DISABLED"));
+      continue;
+    }
+
+    const bool debugThisReader = shouldDebugNfcReader(i);
+
+    // Wichtig bei mehreren PN532 am selben SPI-Bus:
+    // vor der Initialisierung alle CS/SS-Leitungen auf HIGH setzen.
+    deselectAllNfcReaders();
+
+    if (debugThisReader) {
+      printNfcDebug(i, F("DEBUG_START"));
+
+      Serial.print(F("NFC_DEBUG,"));
+      Serial.print(i + 1);
+      Serial.print(F(",SS_PIN,D"));
+      Serial.println(NFC_SS_PINS[i]);
+
+      Serial.print(F("NFC_DEBUG,"));
+      Serial.print(i + 1);
+      Serial.print(F(",SS_IDLE_LEVEL,"));
+      Serial.println(digitalRead(NFC_SS_PINS[i]) == HIGH ? F("HIGH") : F("LOW"));
+
+      printNfcDebug(i, F("BEFORE_BEGIN"));
+    }
+
     NFC_READERS[i]->begin();
     delay(20);
 
-    uint32_t versionData = NFC_READERS[i]->getFirmwareVersion();
+    if (debugThisReader) {
+      printNfcDebug(i, F("AFTER_BEGIN"));
+    }
 
-    Serial.print(F("NFC_READER,"));
-    Serial.print(i + 1);
-    Serial.print(',');
+    uint32_t versionData = readNfcFirmwareWithDebug(i);
 
     if (!versionData) {
       nfcAvailable[i] = false;
-      Serial.println(F("ERROR"));
+
+      Serial.print(F("NFC_READER,"));
+      Serial.print(i + 1);
+      Serial.println(F(",ERROR,NO_FIRMWARE_RESPONSE"));
+
+      if (debugThisReader) {
+        printNfcDebug(i, F("FAILED_AT_GET_FIRMWARE_VERSION"));
+        printNfcDebug(i, F("BEGIN_RETURNED_BUT_PN532_DID_NOT_ANSWER"));
+        printNfcDebug(i, F("CHECK_SS_D41_POWER_GND_OR_READER_IF_SHARED_SPI_READERS_WORK"));
+      }
       continue;
     }
 
     nfcAvailable[i] = true;
 
-    Serial.print(F("READY,CHIP,PN5"));
+    // Normale READY-Ausgabe beibehalten.
+    Serial.print(F("NFC_READER,"));
+    Serial.print(i + 1);
+    Serial.print(F(",READY,CHIP,PN5"));
     Serial.print((versionData >> 24) & 0xFF, HEX);
     Serial.print(F(",FIRMWARE,"));
     Serial.print((versionData >> 16) & 0xFF, DEC);
     Serial.print('.');
     Serial.println((versionData >> 8) & 0xFF, DEC);
 
+    if (debugThisReader) {
+      printNfcDebug(i, F("BEFORE_SAM_CONFIG"));
+    }
+
     NFC_READERS[i]->SAMConfig();
     delay(20);
+
+    if (debugThisReader) {
+      printNfcDebug(i, F("AFTER_SAM_CONFIG"));
+      printNfcDebug(i, F("INIT_COMPLETE"));
+    }
   }
+
+  deselectAllNfcReaders();
 }
 
 // ============================================================
@@ -532,6 +725,10 @@ void scanCableConnections() {
 // ============================================================
 
 void pollOneNfcReader() {
+  if (!NFC_SYSTEM_ENABLED) {
+    return;
+  }
+
   unsigned long now = millis();
 
   if (now - lastNfcPollTime < NFC_POLL_INTERVAL_MS) {
@@ -540,8 +737,25 @@ void pollOneNfcReader() {
 
   lastNfcPollTime = now;
 
+  // Den nächsten aktivierten Reader suchen.
+  // Dadurch verschwenden deaktivierte Reader keine Poll-Zyklen.
   uint8_t readerIndex = nextNfcReader;
-  nextNfcReader = (nextNfcReader + 1) % NFC_COUNT;
+  bool foundEnabledReader = false;
+
+  for (uint8_t attempts = 0; attempts < NFC_COUNT; attempts++) {
+    if (NFC_ENABLED[readerIndex]) {
+      foundEnabledReader = true;
+      break;
+    }
+
+    readerIndex = (readerIndex + 1) % NFC_COUNT;
+  }
+
+  if (!foundEnabledReader) {
+    return;
+  }
+
+  nextNfcReader = (readerIndex + 1) % NFC_COUNT;
 
   if (!nfcAvailable[readerIndex]) {
     return;
