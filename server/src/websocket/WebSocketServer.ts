@@ -8,11 +8,12 @@ import { WebSocketServer as WsServer, WebSocket } from 'ws';
 import type { WSMessage } from '../../../shared/events.js';
 import { config } from '../config.js';
 import type { HardwareStateManager } from '../state/HardwareState.js';
-import type { HardwareEvent } from '../../../shared/events.js';
+import type { HardwareEvent, HardwareEventTiming } from '../../../shared/events.js';
 
 export class WebSocketServerWrapper {
   private wss: WsServer;
   private clientCount = 0;
+  private lastPotLatencyLogTimes = new Array(16).fill(0);
 
   constructor(port: number) {
     this.wss = new WsServer({ port });
@@ -37,10 +38,12 @@ export class WebSocketServerWrapper {
       console.log(`[WS] Client connected (${clientIp}). Total: ${this.clientCount}`);
 
       // Send full state snapshot to new client
+      const snapshot = stateManager.getSnapshot();
       const stateMsg: WSMessage = {
         type: 'state',
-        state: stateManager.getSnapshot(),
+        state: snapshot,
       };
+      console.log(`[WS] Sending snapshot to client (${clientIp}):`, JSON.stringify(snapshot.nfc.map((n, i) => ({ slot: i + 1, present: n.present, uid: n.uid }))));
       this.send(ws, stateMsg);
 
       // Send current mode
@@ -78,10 +81,56 @@ export class WebSocketServerWrapper {
    * to all connected clients.
    */
   subscribeToState(stateManager: HardwareStateManager): void {
-    stateManager.on('change', (event: HardwareEvent) => {
-      const msg: WSMessage = { type: 'hardware', event };
+    stateManager.on('change', (event: HardwareEvent, timing: HardwareEventTiming = {}) => {
+      if (event.type !== 'pot') {
+        console.log(`[WS Broadcast] Event: ${event.type} -> ${this.wss.clients.size} active WS clients`);
+      }
+
+      const serverSentAt = Date.now();
+      let maxClientBufferedBytes = 0;
+      this.wss.clients.forEach((client) => {
+        maxClientBufferedBytes = Math.max(maxClientBufferedBytes, client.bufferedAmount);
+      });
+
+      const messageTiming: HardwareEventTiming = {
+        ...timing,
+        serverSentAt,
+        maxClientBufferedBytes,
+      };
+
+      if (this.shouldLogLatency(event, serverSentAt)) {
+        const serialToState = this.duration(timing.serialReceivedAt, timing.stateAppliedAt);
+        const stateToWs = this.duration(timing.stateAppliedAt, serverSentAt);
+        const backendTotal = this.duration(timing.serialReceivedAt, serverSentAt);
+        console.log(
+          `[Latency Backend] ${this.eventLabel(event)} | Serial→State ${serialToState} | State→WS ${stateToWs} | total ${backendTotal} | WS queued ${maxClientBufferedBytes} B`,
+        );
+      }
+
+      const msg: WSMessage = { type: 'hardware', event, timing: messageTiming };
       this.broadcast(msg);
     });
+  }
+
+  private shouldLogLatency(event: HardwareEvent, now: number): boolean {
+    if (event.type !== 'pot') return true;
+
+    if (now - this.lastPotLatencyLogTimes[event.id] < 250) return false;
+    this.lastPotLatencyLogTimes[event.id] = now;
+    return true;
+  }
+
+  private eventLabel(event: HardwareEvent): string {
+    if (event.type === 'pot') return `pot ${event.id + 1}`;
+    if (event.type === 'contact') return `contact ${event.id + 1}`;
+    if (event.type === 'button') return `button ${event.name}`;
+    if (event.type === 'nfc') return `nfc ${event.reader + 1}`;
+    return `banana ${event.theme}/${event.socket}`;
+  }
+
+  private duration(start: number | undefined, end: number | undefined): string {
+    if (start === undefined || end === undefined) return 'n/a';
+    return `${Math.max(0, end - start)} ms`;
   }
 
   /** Broadcast a message to all connected clients. */
@@ -109,6 +158,12 @@ export class WebSocketServerWrapper {
 
   /** Gracefully close the WebSocket server. */
   close(): Promise<void> {
+    // wss.close() waits for every connected browser to disconnect. During a
+    // dev-server reload those clients stay open and used to stall restarts for
+    // roughly 20 seconds, so close them before waiting for the server itself.
+    this.wss.clients.forEach((client) => client.terminate());
+    this.clientCount = 0;
+
     return new Promise((resolve, reject) => {
       this.wss.close((err) => {
         if (err) reject(err);

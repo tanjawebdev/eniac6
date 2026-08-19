@@ -43,8 +43,8 @@ async function main(): Promise<void> {
   const stateManager = new HardwareStateManager();
 
   // Feed hardware events into the state manager
-  hardwareSource.on('data', (event) => {
-    stateManager.applyEvent(event);
+  hardwareSource.on('data', (event, timing) => {
+    stateManager.applyEvent(event, timing);
   });
 
   // Log hardware source lifecycle events
@@ -94,6 +94,14 @@ async function main(): Promise<void> {
 
     console.log(`\n[Main] Received ${signal}. Shutting down gracefully…`);
 
+    // Arm the fallback before awaiting any resource. Otherwise a hanging
+    // close operation prevents this timeout from ever being registered.
+    const forceExitTimer = setTimeout(() => {
+      console.error('[Main] Forced exit after timeout.');
+      process.exit(1);
+    }, 5000);
+    forceExitTimer.unref();
+
     // Stop hardware source
     hardwareSource.stop();
 
@@ -107,16 +115,11 @@ async function main(): Promise<void> {
 
     // Close HTTP server
     httpServer.close(() => {
+      clearTimeout(forceExitTimer);
       console.log('[Main] HTTP server closed.');
       console.log('[Main] Goodbye!');
       process.exit(0);
     });
-
-    // Force exit after 5 seconds if graceful shutdown hangs
-    setTimeout(() => {
-      console.error('[Main] Forced exit after timeout.');
-      process.exit(1);
-    }, 5000).unref();
   }
 
   process.on('SIGINT', () => shutdown('SIGINT'));

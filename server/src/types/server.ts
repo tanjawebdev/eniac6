@@ -5,7 +5,7 @@
 // ============================================
 
 import { EventEmitter } from 'events';
-import type { HardwareEvent } from '../../../shared/events.js';
+import type { HardwareEvent, HardwareEventTiming } from '../../../shared/events.js';
 
 /**
  * Common interface for hardware data sources.
@@ -20,12 +20,12 @@ export interface IHardwareSource extends EventEmitter {
   stop(): void;
 
   // --- Typed event overloads ---
-  on(event: 'data', listener: (data: HardwareEvent) => void): this;
+  on(event: 'data', listener: (data: HardwareEvent, timing?: HardwareEventTiming) => void): this;
   on(event: 'error', listener: (error: Error) => void): this;
   on(event: 'connected', listener: () => void): this;
   on(event: 'disconnected', listener: () => void): this;
 
-  emit(event: 'data', data: HardwareEvent): boolean;
+  emit(event: 'data', data: HardwareEvent, timing?: HardwareEventTiming): boolean;
   emit(event: 'error', error: Error): boolean;
   emit(event: 'connected'): boolean;
   emit(event: 'disconnected'): boolean;

@@ -10,6 +10,7 @@ export class WebSocketService {
   private reconnectDelay = 1000;
   private maxReconnectDelay = 10000;
   private isIntentionalDisconnect = false;
+  private lastPotLatencyLogTimes = new Array(16).fill(0);
 
   private constructor() {}
 
@@ -40,9 +41,13 @@ export class WebSocketService {
     this.ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data) as WSMessage;
+        if (message.type !== 'hardware' || message.event.type !== 'pot') {
+          console.log('[WS] Received:', message);
+        }
         
         switch (message.type) {
           case 'hardware':
+            this.logBrowserLatency(message);
             useHardwareStore.getState().updateFromEvent(message.event);
             break;
           case 'state':
@@ -108,5 +113,26 @@ export class WebSocketService {
       this.reconnectDelay = Math.min(this.reconnectDelay * 2, this.maxReconnectDelay);
       this.connect();
     }, this.reconnectDelay);
+  }
+
+  private logBrowserLatency(message: Extract<WSMessage, { type: 'hardware' }>): void {
+    const { event, timing } = message;
+    if (timing?.serverSentAt === undefined) return;
+
+    const clientReceivedAt = Date.now();
+    if (event.type === 'pot') {
+      if (clientReceivedAt - this.lastPotLatencyLogTimes[event.id] < 250) return;
+      this.lastPotLatencyLogTimes[event.id] = clientReceivedAt;
+    }
+
+    const wsLatency = Math.max(0, clientReceivedAt - timing.serverSentAt);
+    const endToEnd = timing.serialReceivedAt === undefined
+      ? 'n/a'
+      : `${Math.max(0, clientReceivedAt - timing.serialReceivedAt)} ms`;
+    const label = event.type === 'pot' ? `pot ${event.id + 1}` : event.type;
+
+    console.log(
+      `[Latency Browser] ${label} | WS→Browser ${wsLatency} ms | Serial→Browser ${endToEnd} | WS queued ${timing.maxClientBufferedBytes ?? 0} B`,
+    );
   }
 }

@@ -143,7 +143,7 @@ constexpr uint8_t MEGA_HARDWARE_SS_PIN = 53;
 
   Für den ersten Hardware-Test absichtlich auf false gesetzt.
 */
-constexpr bool NFC_SYSTEM_ENABLED = true;
+constexpr bool NFC_SYSTEM_ENABLED = false;
 
 const bool NFC_ENABLED[NFC_COUNT] = {
   true, true, true, true, false, false
@@ -161,7 +161,7 @@ const bool NFC_ENABLED[NFC_COUNT] = {
   einem einmaligen Kommunikationsfehler und einem dauerhaft nicht erreichbaren
   Reader unterscheiden kann.
 */
-constexpr bool NFC_INIT_DEBUG = true;
+constexpr bool NFC_INIT_DEBUG = false;
 constexpr uint8_t NFC_DEBUG_READER = 4;
 constexpr uint8_t NFC_FIRMWARE_RETRIES = 5;
 constexpr unsigned long NFC_FIRMWARE_RETRY_DELAY_MS = 150;

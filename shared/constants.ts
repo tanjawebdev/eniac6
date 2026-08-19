@@ -43,7 +43,7 @@ export type ProgrammerKey = (typeof PROGRAMMER_KEYS)[number];
 // Each card represents a programmer and has a unique, static UID.
 export const PROGRAMMER_UIDS = {
   mcnulty: '04A17C00', // Kay McNulty
-  jennings: '04A17C01', // Jean Jennings
+  jennings: '04DB83A18C2681', // Jean Jennings
   snyder: '04A17C02', // Betty Snyder
   wescoff: '04A17C03', // Marlyn Wescoff
   bilas: '04A17C04', // Fran Bilas

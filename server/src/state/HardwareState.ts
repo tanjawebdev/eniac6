@@ -7,7 +7,7 @@
 import { EventEmitter } from 'events';
 import { createDefaultHardwareState } from '../../../shared/hardware.js';
 import type { HardwareState as HardwareStateType } from '../../../shared/hardware.js';
-import type { HardwareEvent } from '../../../shared/events.js';
+import type { HardwareEvent, HardwareEventTiming } from '../../../shared/events.js';
 
 export class HardwareStateManager extends EventEmitter {
   private state: HardwareStateType;
@@ -21,7 +21,7 @@ export class HardwareStateManager extends EventEmitter {
    * Apply a hardware event to update the canonical state.
    * Emits 'change' with the originating event after mutation.
    */
-  applyEvent(event: HardwareEvent): void {
+  applyEvent(event: HardwareEvent, timing: HardwareEventTiming = {}): void {
     switch (event.type) {
       case 'pot':
         this.state.pots[event.id] = event.value;
@@ -57,7 +57,10 @@ export class HardwareStateManager extends EventEmitter {
       }
     }
 
-    this.emit('change', event);
+    this.emit('change', event, {
+      ...timing,
+      stateAppliedAt: Date.now(),
+    } satisfies HardwareEventTiming);
   }
 
   /** Returns a deep copy of the current state (safe to serialize). */

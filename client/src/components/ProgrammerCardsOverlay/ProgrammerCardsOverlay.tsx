@@ -45,10 +45,14 @@ export function ProgrammerCardsOverlay() {
     nfcStates.length === 6 &&
     nfcStates.every((n) => n.present && n.uid);
 
+  console.log('[Overlay] Current Scene:', currentScene, '| nfcStates:', JSON.stringify(nfcStates));
+
   return (
     <div className={`programmer-cards-overlay ${isThemeActive ? 'programming-theme-mode' : ''}`}>
       {PROGRAMMER_LIST.map((prog) => {
-        const isNfcIn = nfcStates.some((n) => n.present && n.uid === prog.uid);
+        const matchingReader = nfcStates.find((n) => n.present && n.uid.trim().toUpperCase() === prog.uid.trim().toUpperCase());
+        const isNfcIn = !!matchingReader;
+        console.log(`[Overlay] ${prog.key}: isNfcIn=${isNfcIn} (prog.uid="${prog.uid}", matched reader=${matchingReader ? JSON.stringify(matchingReader) : 'none'})`);
         const pos = CARD_POSITIONS[prog.key];
         const displayName = prog.firstName.toUpperCase();
 
@@ -66,13 +70,13 @@ export function ProgrammerCardsOverlay() {
               '--accent-color': allInserted
                 ? '#ffffff'
                 : isNfcIn
-                ? prog.color
-                : 'rgba(255, 255, 255, 0.12)',
+                  ? prog.color
+                  : 'rgba(255, 255, 255, 0.12)',
               '--accent-glow': allInserted
                 ? 'rgba(255, 255, 255, 0.25)'
                 : isNfcIn
-                ? `${prog.color}40`
-                : 'rgba(255, 255, 255, 0.05)',
+                  ? `${prog.color}40`
+                  : 'rgba(255, 255, 255, 0.05)',
             } as React.CSSProperties}
             onClick={() => handleCardClick(prog.key)}
           >

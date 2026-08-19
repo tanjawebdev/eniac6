@@ -38,6 +38,18 @@ export interface NfcEvent {
 /** Discriminated union of all hardware events from the Arduino. */
 export type HardwareEvent = PotEvent | ButtonEvent | ContactEvent | BananaEvent | NfcEvent;
 
+/** Optional end-to-end timestamps added by the backend for latency diagnostics. */
+export interface HardwareEventTiming {
+  /** Complete newline-terminated event received from the serial port. */
+  serialReceivedAt?: number;
+  /** Event applied to the canonical backend state. */
+  stateAppliedAt?: number;
+  /** WebSocket broadcast started. */
+  serverSentAt?: number;
+  /** Bytes already queued across the busiest WebSocket client before this send. */
+  maxClientBufferedBytes?: number;
+}
+
 // --- System events (backend → frontend) ---
 
 export type SystemEvent =
@@ -49,6 +61,6 @@ export type SystemEvent =
 // --- WebSocket message envelope ---
 
 export type WSMessage =
-  | { type: 'hardware'; event: HardwareEvent }
+  | { type: 'hardware'; event: HardwareEvent; timing?: HardwareEventTiming }
   | { type: 'state'; state: HardwareState }
   | { type: 'system'; event: SystemEvent };
