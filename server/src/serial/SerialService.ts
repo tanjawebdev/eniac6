@@ -82,6 +82,10 @@ export class SerialService extends EventEmitter implements IHardwareSource {
   /** Accumulates partial serial data between newlines. */
   private lineBuffer = '';
 
+  /** Raw serial chunk timing for detecting driver-side buffering. */
+  private lastSerialChunkAt = 0;
+  private serialOpenedAt = 0;
+
   /** Rate limiter for POT console logging (per-pot timestamp) */
   private lastLoggedPotValues = new Array(16).fill(-1);
   private lastPotLogTimes = new Array(16).fill(0);
@@ -118,7 +122,8 @@ export class SerialService extends EventEmitter implements IHardwareSource {
         path: config.serialPort,
         baudRate: config.baudRate,
         autoOpen: false,
-        highWaterMark: 1024,
+        // Keep Windows/USB reads small without creating one callback per byte.
+        highWaterMark: 64,
       });
 
       // --- Event handlers ---
@@ -126,10 +131,26 @@ export class SerialService extends EventEmitter implements IHardwareSource {
       this.port.on('open', () => {
         console.log('[Serial] Port opened.');
         this.lineBuffer = '';
+        this.lastSerialChunkAt = 0;
+        this.serialOpenedAt = Date.now();
 
-        // Assert DTR / RTS signals (standard for Arduino serial comms)
-        this.port?.set({ dtr: true, rts: true }, (err) => {
-          if (err) console.warn('[Serial] Warning setting DTR/RTS:', err.message);
+        // Pulse DTR so a fast backend reload also resets the Arduino. Without
+        // an edge, the new state manager starts empty while the still-running
+        // sketch only emits future changes.
+        const openedPort = this.port;
+        openedPort?.set({ dtr: false, rts: false }, (resetErr) => {
+          if (resetErr) {
+            console.warn('[Serial] Warning clearing DTR/RTS:', resetErr.message);
+          }
+
+          setTimeout(() => {
+            if (!openedPort?.isOpen) return;
+            openedPort.set({ dtr: true, rts: true }, (assertErr) => {
+              if (assertErr) {
+                console.warn('[Serial] Warning setting DTR/RTS:', assertErr.message);
+              }
+            });
+          }, 100);
         });
 
         this.emit('connected');
@@ -147,9 +168,22 @@ export class SerialService extends EventEmitter implements IHardwareSource {
         this.scheduleReconnect();
       });
 
-      // Timestamp each raw chunk, then split complete lines for latency diagnostics.
+      // Timestamp each low-latency chunk, then split complete lines for diagnostics.
       this.port.on('data', (chunk: Buffer) => {
         const serialReceivedAt = Date.now();
+        const isFirstChunk = this.lastSerialChunkAt === 0;
+        const chunkGap = isFirstChunk
+          ? 0
+          : serialReceivedAt - this.lastSerialChunkAt;
+        this.lastSerialChunkAt = serialReceivedAt;
+
+        if (isFirstChunk || chunkGap >= 250 || chunk.length >= 64) {
+          const sinceOpen = serialReceivedAt - this.serialOpenedAt;
+          console.log(
+            `[Serial Chunk] ${chunk.length} B | gap ${chunkGap} ms | since open ${sinceOpen} ms`,
+          );
+        }
+
         this.lineBuffer += chunk.toString('utf-8');
         let idx: number;
         while ((idx = this.lineBuffer.indexOf('\n')) !== -1) {
