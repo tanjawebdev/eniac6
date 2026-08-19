@@ -5,13 +5,6 @@ import { THEME_POT_MAPPING } from '@shared/constants';
 import { PROGRAMMERS } from '../../data/programmers';
 import './ThemeScene.css';
 
-// Pot label config per theme
-const THEME_POT_LABELS: Record<string, [string, string, string, string]> = {
-  programming: ['SCALE', 'SPEED', 'CONTRAST', 'AMPLITUDE'],
-  pioneering: ['RASTER', 'SPEED', 'DOT SIZE', 'PEOPLE'],
-  recognition: ['DENSITY', 'SPEED', 'BLUR', 'ALPHA'],
-  teamwork: ['SIZE', 'SPEED', 'COUNT', 'LINE DIST'],
-};
 
 export function ThemeScene() {
   const selectedTheme = useAppStore((state) => state.selectedTheme);
@@ -60,12 +53,12 @@ export function ThemeScene() {
     if (!selectedTheme || !THEME_POT_MAPPING[selectedTheme]) {
       return { p0: 0, p1: 0, p2: 0, p3: 0 };
     }
-    const { potStart } = THEME_POT_MAPPING[selectedTheme];
+    const { potIds } = THEME_POT_MAPPING[selectedTheme];
     return {
-      p0: pots[potStart] ?? 0,
-      p1: pots[potStart + 1] ?? 0,
-      p2: pots[potStart + 2] ?? 0,
-      p3: pots[potStart + 3] ?? 0,
+      p0: pots[potIds[0] - 1] ?? 0,
+      p1: pots[potIds[1] - 1] ?? 0,
+      p2: pots[potIds[2] - 1] ?? 0,
+      p3: pots[potIds[3] - 1] ?? 0,
     };
   };
 
@@ -73,7 +66,7 @@ export function ThemeScene() {
 
   if (!selectedTheme) return null;
 
-  const potLabels = THEME_POT_LABELS[selectedTheme] || ['POT 1', 'POT 2', 'POT 3', 'POT 4'];
+  const potLabels = THEME_POT_MAPPING[selectedTheme]?.potLabels || ['POT 1', 'POT 2', 'POT 3', 'POT 4'];
 
   const pot0Percent = Math.round((p0 / 1023) * 100);
   const pot1Percent = Math.round((p1 / 1023) * 100);

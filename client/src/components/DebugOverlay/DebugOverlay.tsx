@@ -7,12 +7,6 @@ import { THEME_IDS, THEME_POT_MAPPING, PROGRAMMER_UIDS, UID_TO_PROGRAMMER, type 
 import { PROGRAMMERS } from '../../data/programmers';
 import './DebugOverlay.css';
 
-const THEME_POT_LABELS: Record<ThemeId, [string, string, string, string]> = {
-  pioneering: ['RASTER', 'SPEED', 'DOT SIZE', 'PEOPLE'],
-  programming: ['SCALE', 'SPEED', 'CONTRAST', 'AMPLITUDE'],
-  recognition: ['DENSITY', 'SPEED', 'BLUR', 'ALPHA'],
-  teamwork: ['SIZE', 'SPEED', 'COUNT', 'LINE DIST'],
-};
 
 export interface DebugOverlayProps {
   standalone?: boolean;
@@ -30,7 +24,7 @@ export function DebugOverlay({ standalone = false }: DebugOverlayProps) {
   const [socketMappings, setSocketMappings] = useState<Record<string, number | null>>(() => {
     const initial: Record<string, number | null> = {};
     const currentHardware = useHardwareStore.getState();
-    
+
     THEME_IDS.forEach((themeId) => {
       const tState = currentHardware.banana[themeId];
       if (tState) {
@@ -43,15 +37,15 @@ export function DebugOverlay({ standalone = false }: DebugOverlayProps) {
           });
           return idx !== -1 ? idx : null;
         };
-        
+
         const slot0 = findSlot(tState.socket0);
         if (slot0 !== null) initial[`${themeId}-socket0`] = slot0;
-        
+
         const slot1 = findSlot(tState.socket1);
         if (slot1 !== null) initial[`${themeId}-socket1`] = slot1;
       }
     });
-    
+
     return initial;
   });
 
@@ -94,18 +88,18 @@ export function DebugOverlay({ standalone = false }: DebugOverlayProps) {
   // Keep banana plug connections in sync with NFC card insertion/removal changes
   useEffect(() => {
     if (!mockMode) return;
-    
+
     THEME_IDS.forEach((themeId) => {
       [0, 1].forEach((socketIndex) => {
         const socketKey = socketIndex === 0 ? 'socket0' : 'socket1';
         const mappingKey = `${themeId}-socket${socketIndex}`;
         const mappedSlot = socketMappings[mappingKey];
-        
+
         if (mappedSlot !== undefined && mappedSlot !== null) {
           const reader = hardware.nfc[mappedSlot];
           const currentProgrammerKey = reader?.present ? UID_TO_PROGRAMMER[reader.uid] : null;
           const activeBananaProgKey = hardware.banana[themeId]?.[socketKey];
-          
+
           if (currentProgrammerKey !== activeBananaProgKey) {
             wsService.sendEvent({
               type: 'banana',
@@ -130,7 +124,7 @@ export function DebugOverlay({ standalone = false }: DebugOverlayProps) {
   const handleBananaSlotChange = (themeId: ThemeId, socket: 0 | 1, valueStr: string) => {
     if (!mockMode) return;
     const mappingKey = `${themeId}-socket${socket}`;
-    
+
     if (valueStr === '') {
       setSocketMappings((prev) => ({ ...prev, [mappingKey]: null }));
       wsService.sendEvent({
@@ -143,10 +137,10 @@ export function DebugOverlay({ standalone = false }: DebugOverlayProps) {
     } else {
       const slotIndex = parseInt(valueStr, 10);
       setSocketMappings((prev) => ({ ...prev, [mappingKey]: slotIndex }));
-      
+
       const reader = hardware.nfc[slotIndex];
       const programmerKey = reader.present ? UID_TO_PROGRAMMER[reader.uid] : null;
-      
+
       wsService.sendEvent({
         type: 'banana',
         theme: themeId,
@@ -231,19 +225,19 @@ export function DebugOverlay({ standalone = false }: DebugOverlayProps) {
             <h4>Potentiometers (16)</h4>
             <div className="pot-groups">
               {THEME_IDS.map((themeId) => {
-                const { potStart } = THEME_POT_MAPPING[themeId];
+                const { potIds, potLabels } = THEME_POT_MAPPING[themeId];
                 return (
                   <div key={themeId} className="pot-group-container">
                     <span className="pot-group-title">{themeId.toUpperCase()}</span>
                     <div className="pot-group-grid">
-                      {Array.from({ length: 4 }).map((_, offset) => {
-                        const id = potStart + offset;
-                        const val = hardware.pots[id] ?? 0;
+                      {potIds.map((potId, offset) => {
+                        const val = hardware.pots[potId - 1] ?? 0;
                         const pct = (val / 1023) * 100;
+                        const label = potLabels[offset];
                         return (
-                          <div key={id} className="pot-bar-wrapper interactive">
+                          <div key={potId} className="pot-bar-wrapper interactive">
                             <div className="pot-bar-labels">
-                              <span>P{id.toString().padStart(2, '0')} ({THEME_POT_LABELS[themeId][offset]})</span>
+                              <span>POT {potId} ({label})</span>
                               <span>{val}</span>
                             </div>
                             <div className="pot-bar-track-container">
@@ -253,7 +247,7 @@ export function DebugOverlay({ standalone = false }: DebugOverlayProps) {
                                 max="1023"
                                 value={val}
                                 disabled={!mockMode}
-                                onChange={(e) => handlePotChange(id, parseInt(e.target.value))}
+                                onChange={(e) => handlePotChange(potId - 1, parseInt(e.target.value))}
                                 className="pot-slider"
                                 style={{
                                   background: `linear-gradient(to right, ${activeColor} 0%, ${activeColor} ${pct}%, rgba(255, 255, 255, 0.08) ${pct}%)`,

@@ -43,19 +43,19 @@ export function DebugScene() {
           <h3>ANALOG POTENTIOMETERS (16 CHANNELS)</h3>
           <div className="dbg-pots-grid">
             {THEME_IDS.map((themeId) => {
-              const { potStart } = THEME_POT_MAPPING[themeId];
+              const { potIds, potLabels } = THEME_POT_MAPPING[themeId];
               return (
                 <div key={themeId} className="dbg-pot-group">
                   <div className="group-header">{themeId.toUpperCase()}</div>
                   <div className="group-pots">
-                    {Array.from({ length: 4 }).map((_, offset) => {
-                      const id = potStart + offset;
-                      const val = hardware.pots[id] ?? 0;
+                    {potIds.map((potId, offset) => {
+                      const val = hardware.pots[potId - 1] ?? 0;
                       const pct = (val / 1023) * 100;
+                      const label = potLabels[offset];
                       return (
-                        <div key={id} className="dbg-pot-item">
+                        <div key={potId} className="dbg-pot-item">
                           <div className="item-labels">
-                            <span>CH_{id.toString().padStart(2, '0')}</span>
+                            <span>POT {potId} ({label})</span>
                             <strong>{val}</strong>
                           </div>
                           <div className="item-track">

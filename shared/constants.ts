@@ -20,12 +20,34 @@ export const BUTTON_NAMES = ['home', 'intro'] as const;
 export const THEME_IDS = ['pioneering', 'programming', 'recognition', 'teamwork'] as const;
 export type ThemeId = (typeof THEME_IDS)[number];
 
-/** Each theme maps to a banana plug and a range of 4 potentiometers. */
-export const THEME_POT_MAPPING: Record<ThemeId, { bananaId: number; potStart: number }> = {
-  pioneering: { bananaId: 0, potStart: 0 },
-  programming: { bananaId: 1, potStart: 4 },
-  recognition: { bananaId: 2, potStart: 8 },
-  teamwork: { bananaId: 3, potStart: 12 },
+export interface ThemePotConfig {
+  bananaId: number;
+  potIds: [number, number, number, number]; // 1-based hardware pot numbers (1 to 16)
+  potLabels: [string, string, string, string];
+}
+
+/** Each theme maps to a banana plug and 4 specific potentiometers (1-based: 1..16) with parameter labels. */
+export const THEME_POT_MAPPING: Record<ThemeId, ThemePotConfig> = {
+  recognition: {
+    bananaId: 0,
+    potIds: [1, 2, 5, 6],
+    potLabels: ['SPEED', 'SIZE', 'BLUR', 'CONTRAST'],
+  },
+  teamwork: {
+    bananaId: 1,
+    potIds: [3, 4, 7, 8],
+    potLabels: ['SPEED', 'SIZE', 'COUNT', 'LINES'],
+  },
+  programming: {
+    bananaId: 2,
+    potIds: [9, 10, 13, 14],
+    potLabels: ['SPEED', 'SIZE', 'GAMMA', 'CONTRAST'],
+  },
+  pioneering: {
+    bananaId: 3,
+    potIds: [11, 12, 15, 16],
+    potLabels: ['SPEED', 'SIZE', 'COUNT', 'RASTER'],
+  },
 };
 
 // --- Programmer keys ---

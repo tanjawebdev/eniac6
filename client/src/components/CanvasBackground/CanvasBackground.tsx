@@ -70,12 +70,12 @@ export function CanvasBackground() {
     let rotate = 0;
 
     if (selectedTheme && THEME_POT_MAPPING[selectedTheme]) {
-      const { potStart } = THEME_POT_MAPPING[selectedTheme];
+      const { potIds } = THEME_POT_MAPPING[selectedTheme];
       // Map 10-bit analog values to visual ranges
-      const pot0Val = pots[potStart] ?? 512;
-      const pot1Val = pots[potStart + 1] ?? 512;
-      const pot2Val = pots[potStart + 2] ?? 512;
-      const pot3Val = pots[potStart + 3] ?? 0;
+      const pot0Val = pots[potIds[0] - 1] ?? 512;
+      const pot1Val = pots[potIds[1] - 1] ?? 512;
+      const pot2Val = pots[potIds[2] - 1] ?? 512;
+      const pot3Val = pots[potIds[3] - 1] ?? 0;
 
       speed = (pot0Val / 1023) * 10;
       size = 1 + (pot1Val / 1023) * 9; // 1 to 10
@@ -106,11 +106,11 @@ export function CanvasBackground() {
   let pot3 = 921;
 
   if (selectedTheme && THEME_POT_MAPPING[selectedTheme]) {
-    const { potStart } = THEME_POT_MAPPING[selectedTheme];
-    pot0 = pots[potStart] ?? 307;
-    pot1 = pots[potStart + 1] ?? 102;
-    pot2 = pots[potStart + 2] ?? 716;
-    pot3 = pots[potStart + 3] ?? 921;
+    const { potIds } = THEME_POT_MAPPING[selectedTheme];
+    pot0 = pots[potIds[0]] ?? 307;
+    pot1 = pots[potIds[1]] ?? 102;
+    pot2 = pots[potIds[2]] ?? 716;
+    pot3 = pots[potIds[3]] ?? 921;
   }
 
   // Instantiate animation engine on mount
