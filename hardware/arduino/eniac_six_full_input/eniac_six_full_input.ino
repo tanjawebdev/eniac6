@@ -143,10 +143,10 @@ constexpr uint8_t MEGA_HARDWARE_SS_PIN = 53;
 
   Für den ersten Hardware-Test absichtlich auf false gesetzt.
 */
-constexpr bool NFC_SYSTEM_ENABLED = true;
+constexpr bool NFC_SYSTEM_ENABLED = false;
 
 const bool NFC_ENABLED[NFC_COUNT] = {
-  true, true, true, true, false, false
+  false, false, false, true, false, false
 };
 
 /*
@@ -161,8 +161,8 @@ const bool NFC_ENABLED[NFC_COUNT] = {
   einem einmaligen Kommunikationsfehler und einem dauerhaft nicht erreichbaren
   Reader unterscheiden kann.
 */
-constexpr bool NFC_INIT_DEBUG = false;
-constexpr uint8_t NFC_DEBUG_READER = 4;
+constexpr bool NFC_INIT_DEBUG = true;
+constexpr uint8_t NFC_DEBUG_READER = 0;
 constexpr uint8_t NFC_FIRMWARE_RETRIES = 5;
 constexpr unsigned long NFC_FIRMWARE_RETRY_DELAY_MS = 150;
 
@@ -358,6 +358,17 @@ void printNfcDebug(uint8_t readerIndex, const __FlashStringHelper* message) {
   Serial.print(readerIndex + 1);
   Serial.print(',');
   Serial.println(message);
+  Serial.flush();
+}
+
+void printNfcStartupCheckpoint(const __FlashStringHelper* message) {
+  if (!NFC_INIT_DEBUG) {
+    return;
+  }
+
+  Serial.print(F("NFC_DEBUG,STARTUP,"));
+  Serial.println(message);
+  Serial.flush();
 }
 
 uint32_t readNfcFirmwareWithDebug(uint8_t readerIndex) {
@@ -378,6 +389,7 @@ uint32_t readNfcFirmwareWithDebug(uint8_t readerIndex) {
       Serial.print(attempt);
       Serial.print('/');
       Serial.println(attempts);
+      Serial.flush();
     }
 
     versionData = NFC_READERS[readerIndex]->getFirmwareVersion();
@@ -408,17 +420,10 @@ uint32_t readNfcFirmwareWithDebug(uint8_t readerIndex) {
 }
 
 void initializeNfcReaders() {
-  // Alle Chip-Select-Leitungen zuerst sicher deaktivieren.
-  // Auch deaktivierte Reader bekommen ein festes HIGH auf SS,
-  // damit kein Chip-Select-Pin floatet.
-  pinMode(MEGA_HARDWARE_SS_PIN, OUTPUT);
-  digitalWrite(MEGA_HARDWARE_SS_PIN, HIGH);
-
-  for (uint8_t i = 0; i < NFC_COUNT; i++) {
-    pinMode(NFC_SS_PINS[i], OUTPUT);
-    digitalWrite(NFC_SS_PINS[i], HIGH);
-  }
-
+  // Im Diagnosemodus wirklich keinerlei NFC-/SPI-Pins treiben. Die bisherige
+  // Prüfung kam erst nach dem Setzen aller SS-Pins auf OUTPUT/HIGH. Ein falsch
+  // verdrahteter oder kurzgeschlossener Reader konnte den Mega daher trotz
+  // NFC_SYSTEM_ENABLED=false weiterhin in einen Reset-Loop bringen.
   if (!NFC_SYSTEM_ENABLED) {
     for (uint8_t i = 0; i < NFC_COUNT; i++) {
       nfcAvailable[i] = false;
@@ -426,6 +431,48 @@ void initializeNfcReaders() {
     Serial.println(F("NFC_SYSTEM,DISABLED"));
     return;
   }
+
+  printNfcStartupCheckpoint(F("PIN_SETUP_BEGIN"));
+
+  // Alle Chip-Select-Leitungen zuerst sicher deaktivieren.
+  // Auch deaktivierte Reader bekommen ein festes HIGH auf SS,
+  // damit kein Chip-Select-Pin floatet.
+  Serial.print(F("NFC_DEBUG,PIN_SETUP,HARDWARE_SS,D"));
+  Serial.print(MEGA_HARDWARE_SS_PIN);
+  Serial.println(F(",BEGIN"));
+  Serial.flush();
+
+  // Ausgangslatch vor pinMode() auf HIGH setzen. So entsteht beim Wechsel von
+  // INPUT zu OUTPUT kein kurzer LOW-Impuls auf der Chip-Select-Leitung.
+  digitalWrite(MEGA_HARDWARE_SS_PIN, HIGH);
+  pinMode(MEGA_HARDWARE_SS_PIN, OUTPUT);
+
+  Serial.print(F("NFC_DEBUG,PIN_SETUP,HARDWARE_SS,D"));
+  Serial.print(MEGA_HARDWARE_SS_PIN);
+  Serial.println(F(",DONE"));
+  Serial.flush();
+
+  for (uint8_t i = 0; i < NFC_COUNT; i++) {
+    Serial.print(F("NFC_DEBUG,PIN_SETUP,READER,"));
+    Serial.print(i + 1);
+    Serial.print(F(",D"));
+    Serial.print(NFC_SS_PINS[i]);
+    Serial.println(F(",BEGIN"));
+    Serial.flush();
+
+    // Erst HIGH vorladen, danach den Pin als Ausgang aktivieren.
+    digitalWrite(NFC_SS_PINS[i], HIGH);
+    pinMode(NFC_SS_PINS[i], OUTPUT);
+
+    Serial.print(F("NFC_DEBUG,PIN_SETUP,READER,"));
+    Serial.print(i + 1);
+    Serial.print(F(",D"));
+    Serial.print(NFC_SS_PINS[i]);
+    Serial.println(F(",DONE"));
+    Serial.flush();
+  }
+
+  printNfcStartupCheckpoint(F("PIN_SETUP_DONE"));
 
   bool anyNfcEnabled = false;
   for (uint8_t i = 0; i < NFC_COUNT; i++) {
@@ -440,16 +487,12 @@ void initializeNfcReaders() {
     return;
   }
 
-  if (NFC_INIT_DEBUG) {
-    Serial.println(F("NFC_DEBUG,SPI,BEFORE_BEGIN"));
-  }
+  printNfcStartupCheckpoint(F("SPI_BEGIN"));
 
   SPI.begin();
   deselectAllNfcReaders();
 
-  if (NFC_INIT_DEBUG) {
-    Serial.println(F("NFC_DEBUG,SPI,AFTER_BEGIN"));
-  }
+  printNfcStartupCheckpoint(F("SPI_READY"));
 
   for (uint8_t i = 0; i < NFC_COUNT; i++) {
     if (!NFC_ENABLED[i]) {
@@ -478,6 +521,12 @@ void initializeNfcReaders() {
       Serial.print(i + 1);
       Serial.print(F(",SS_IDLE_LEVEL,"));
       Serial.println(digitalRead(NFC_SS_PINS[i]) == HIGH ? F("HIGH") : F("LOW"));
+
+      printNfcDebug(i, F("CS_LOW_TEST_BEGIN"));
+      digitalWrite(NFC_SS_PINS[i], LOW);
+      delay(2);
+      digitalWrite(NFC_SS_PINS[i], HIGH);
+      printNfcDebug(i, F("CS_LOW_TEST_DONE"));
 
       printNfcDebug(i, F("BEFORE_BEGIN"));
     }
@@ -828,10 +877,22 @@ void setup() {
   }
 
   Serial.println(F("SYSTEM,START"));
+  Serial.flush();
 
+  Serial.println(F("SYSTEM,INIT,DIGITAL"));
+  Serial.flush();
   initializeDigitalInputs();
+
+  Serial.println(F("SYSTEM,INIT,POTENTIOMETERS"));
+  Serial.flush();
   initializePotentiometers();
+
+  Serial.println(F("SYSTEM,INIT,CABLE_MATRIX"));
+  Serial.flush();
   initializeCableMatrix();
+
+  Serial.println(F("SYSTEM,INIT,NFC"));
+  Serial.flush();
   initializeNfcReaders();
 
   Serial.println(F("SYSTEM,READY"));
