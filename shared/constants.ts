@@ -62,27 +62,24 @@ export const PROGRAMMER_KEYS = [
 export type ProgrammerKey = (typeof PROGRAMMER_KEYS)[number];
 
 // --- Programmer NFC UIDs ---
-// Each card represents a programmer and has a unique, static UID.
+// Each card represents a programmer and can have multiple static UIDs (primary + backup tag).
 export const PROGRAMMER_UIDS = {
-  mcnulty: '04A17C00', // Kay McNulty
-  jennings: '042D36A18C2681', // Jean Jennings
-  snyder: '04A17C02', // Betty Snyder
-  wescoff: '04A17C03', // Marlyn Wescoff
-  bilas: '04A17C04', // Fran Bilas
-  lichterman: '04A17C05', // Ruth Lichterman
+  mcnulty: ['048E4CA18C2681', '048B45A18C2681'],
+  jennings: ['042D36A18C2681', '048B3FA18C2681'],
+  snyder: ['049F88A18C2681', '04C15DA18C2681'],
+  wescoff: ['04CF8DA18C2681', '045D53A18C2681'],
+  bilas: ['04367FA18C2681', '045F64A18C2681'],
+  lichterman: ['047E93A18C2681', '04ED69A18C2681'],
 } as const;
 
-export type ProgrammerUid = (typeof PROGRAMMER_UIDS)[keyof typeof PROGRAMMER_UIDS];
+export type ProgrammerUid = (typeof PROGRAMMER_UIDS)[ProgrammerKey][number];
 
-/** Maps card UIDs back to their respective programmer key. */
-export const UID_TO_PROGRAMMER: Record<string, ProgrammerKey> = {
-  [PROGRAMMER_UIDS.mcnulty]: 'mcnulty',
-  [PROGRAMMER_UIDS.jennings]: 'jennings',
-  [PROGRAMMER_UIDS.snyder]: 'snyder',
-  [PROGRAMMER_UIDS.wescoff]: 'wescoff',
-  [PROGRAMMER_UIDS.bilas]: 'bilas',
-  [PROGRAMMER_UIDS.lichterman]: 'lichterman',
-};
+/** Maps card UIDs back to their respective programmer key (dynamically derived from PROGRAMMER_UIDS). */
+export const UID_TO_PROGRAMMER: Record<string, ProgrammerKey> = Object.fromEntries(
+  (Object.entries(PROGRAMMER_UIDS) as [ProgrammerKey, readonly string[]][]).flatMap(
+    ([programmer, uids]) => uids.map((uid) => [uid, programmer])
+  )
+);
 
 // --- Display ---
 export const EXHIBITION_WIDTH = 2160;

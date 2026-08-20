@@ -12,7 +12,8 @@ export interface ProgrammerData {
   died: string;        // Death year (or empty if alive)
   portrait: string;    // Path to portrait image
   role: string;
-  uid: string;         // Unique NFC UID associated with this programmer's card
+  uid: string;         // Primary NFC UID
+  uids: readonly string[]; // All NFC UIDs associated with this programmer's card
 }
 
 export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
@@ -28,7 +29,8 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     died: '2006',
     portrait: '/portraits/kay.jpg',
     role: 'programmer',
-    uid: PROGRAMMER_UIDS.mcnulty,
+    uid: PROGRAMMER_UIDS.mcnulty[0],
+    uids: PROGRAMMER_UIDS.mcnulty,
   },
   jennings: {
     key: 'jennings',
@@ -42,7 +44,8 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     died: '2011',
     portrait: '/portraits/jean.jpg',
     role: 'programmer',
-    uid: PROGRAMMER_UIDS.jennings,
+    uid: PROGRAMMER_UIDS.jennings[0],
+    uids: PROGRAMMER_UIDS.jennings,
   },
   snyder: {
     key: 'snyder',
@@ -56,7 +59,8 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     died: '2001',
     portrait: '/portraits/betty.jpg',
     role: 'programmer',
-    uid: PROGRAMMER_UIDS.snyder,
+    uid: PROGRAMMER_UIDS.snyder[0],
+    uids: PROGRAMMER_UIDS.snyder,
   },
   wescoff: {
     key: 'wescoff',
@@ -70,7 +74,8 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     died: '2008',
     portrait: '/portraits/marlyn.jpg',
     role: 'programmer',
-    uid: PROGRAMMER_UIDS.wescoff,
+    uid: PROGRAMMER_UIDS.wescoff[0],
+    uids: PROGRAMMER_UIDS.wescoff,
   },
   bilas: {
     key: 'bilas',
@@ -84,7 +89,8 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     died: '2012',
     portrait: '/portraits/fran.jpg',
     role: 'programmer',
-    uid: PROGRAMMER_UIDS.bilas,
+    uid: PROGRAMMER_UIDS.bilas[0],
+    uids: PROGRAMMER_UIDS.bilas,
   },
   lichterman: {
     key: 'lichterman',
@@ -98,7 +104,8 @@ export const PROGRAMMERS: Record<ProgrammerKey, ProgrammerData> = {
     died: '1986',
     portrait: '/portraits/ruth.jpg',
     role: 'programmer',
-    uid: PROGRAMMER_UIDS.lichterman,
+    uid: PROGRAMMER_UIDS.lichterman[0],
+    uids: PROGRAMMER_UIDS.lichterman,
   },
 };
 

@@ -362,12 +362,12 @@ export function DebugOverlay({ standalone = false }: DebugOverlayProps) {
                           onChange={(e) => handleNfcDropdownChange(index, e.target.value)}
                         >
                           <option value="">[ Empty Slot ]</option>
-                          <option value={PROGRAMMER_UIDS.mcnulty}>Kay McNulty (Gold)</option>
-                          <option value={PROGRAMMER_UIDS.jennings}>Jean Jennings (Orange)</option>
-                          <option value={PROGRAMMER_UIDS.snyder}>Betty Snyder (Red)</option>
-                          <option value={PROGRAMMER_UIDS.wescoff}>Marlyn Wescoff (Brown)</option>
-                          <option value={PROGRAMMER_UIDS.bilas}>Fran Bilas (Purple)</option>
-                          <option value={PROGRAMMER_UIDS.lichterman}>Ruth Lichterman (Blue)</option>
+                          <option value={PROGRAMMER_UIDS.mcnulty[0]}>Kay McNulty (Gold)</option>
+                          <option value={PROGRAMMER_UIDS.jennings[0]}>Jean Jennings (Orange)</option>
+                          <option value={PROGRAMMER_UIDS.snyder[0]}>Betty Snyder (Red)</option>
+                          <option value={PROGRAMMER_UIDS.wescoff[0]}>Marlyn Wescoff (Brown)</option>
+                          <option value={PROGRAMMER_UIDS.bilas[0]}>Fran Bilas (Purple)</option>
+                          <option value={PROGRAMMER_UIDS.lichterman[0]}>Ruth Lichterman (Blue)</option>
                         </select>
                       ) : (
                         <span className="nfc-uid font-monospace">

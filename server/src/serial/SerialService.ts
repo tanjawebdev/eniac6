@@ -82,10 +82,6 @@ export class SerialService extends EventEmitter implements IHardwareSource {
   /** Accumulates partial serial data between newlines. */
   private lineBuffer = '';
 
-  /** Raw serial chunk timing for detecting driver-side buffering. */
-  private lastSerialChunkAt = 0;
-  private serialOpenedAt = 0;
-
   /** Rate limiter for POT console logging (per-pot timestamp) */
   private lastLoggedPotValues = new Array(16).fill(-1);
   private lastPotLogTimes = new Array(16).fill(0);
@@ -131,8 +127,6 @@ export class SerialService extends EventEmitter implements IHardwareSource {
       this.port.on('open', () => {
         console.log('[Serial] Port opened.');
         this.lineBuffer = '';
-        this.lastSerialChunkAt = 0;
-        this.serialOpenedAt = Date.now();
 
         // Pulse DTR so a fast backend reload also resets the Arduino. Without
         // an edge, the new state manager starts empty while the still-running
@@ -171,19 +165,6 @@ export class SerialService extends EventEmitter implements IHardwareSource {
       // Timestamp each low-latency chunk, then split complete lines for diagnostics.
       this.port.on('data', (chunk: Buffer) => {
         const serialReceivedAt = Date.now();
-        const isFirstChunk = this.lastSerialChunkAt === 0;
-        const chunkGap = isFirstChunk
-          ? 0
-          : serialReceivedAt - this.lastSerialChunkAt;
-        this.lastSerialChunkAt = serialReceivedAt;
-
-        if (isFirstChunk || chunkGap >= 250 || chunk.length >= 64) {
-          const sinceOpen = serialReceivedAt - this.serialOpenedAt;
-          console.log(
-            `[Serial Chunk] ${chunk.length} B | gap ${chunkGap} ms | since open ${sinceOpen} ms`,
-          );
-        }
-
         this.lineBuffer += chunk.toString('utf-8');
         let idx: number;
         while ((idx = this.lineBuffer.indexOf('\n')) !== -1) {

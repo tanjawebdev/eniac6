@@ -107,10 +107,10 @@ export function CanvasBackground() {
 
   if (selectedTheme && THEME_POT_MAPPING[selectedTheme]) {
     const { potIds } = THEME_POT_MAPPING[selectedTheme];
-    pot0 = pots[potIds[0]] ?? 307;
-    pot1 = pots[potIds[1]] ?? 102;
-    pot2 = pots[potIds[2]] ?? 716;
-    pot3 = pots[potIds[3]] ?? 921;
+    pot0 = pots[potIds[0] - 1] ?? 307;
+    pot1 = pots[potIds[1] - 1] ?? 102;
+    pot2 = pots[potIds[2] - 1] ?? 716;
+    pot3 = pots[potIds[3] - 1] ?? 921;
   }
 
   // Instantiate animation engine on mount

@@ -5,7 +5,7 @@ import { PROGRAMMER_LIST } from '../../data/programmers';
 import { QuoteBlock } from '../QuoteBlock/QuoteBlock';
 import './ProgrammerCardsOverlay.css';
 
-import { type ProgrammerKey } from '@shared/constants';
+import { UID_TO_PROGRAMMER, type ProgrammerKey } from '@shared/constants';
 
 export function ProgrammerCardsOverlay() {
   const currentScene = useAppStore((state) => state.currentScene);
@@ -50,9 +50,10 @@ export function ProgrammerCardsOverlay() {
   return (
     <div className={`programmer-cards-overlay ${isThemeActive ? 'programming-theme-mode' : ''}`}>
       {PROGRAMMER_LIST.map((prog) => {
-        const matchingReader = nfcStates.find((n) => n.present && n.uid.trim().toUpperCase() === prog.uid.trim().toUpperCase());
+        const matchingReader = nfcStates.find(
+          (n) => n.present && UID_TO_PROGRAMMER[n.uid.trim().toUpperCase()] === prog.key
+        );
         const isNfcIn = !!matchingReader;
-        console.log(`[Overlay] ${prog.key}: isNfcIn=${isNfcIn} (prog.uid="${prog.uid}", matched reader=${matchingReader ? JSON.stringify(matchingReader) : 'none'})`);
         const pos = CARD_POSITIONS[prog.key];
         const displayName = prog.firstName.toUpperCase();
 
