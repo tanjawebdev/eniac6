@@ -30,7 +30,7 @@
 #include <Adafruit_PN532.h>
 
 // PN532
-#define PN532_SS 53
+#define PN532_SS 49
 
 // Digitale Eingänge
 #define BUTTON_1_PIN 7

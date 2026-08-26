@@ -73,7 +73,7 @@
       NFC 1 SS -> D38
       NFC 2 SS -> D39
       NFC 3 SS -> D40
-      NFC 4 SS -> D44
+      NFC 4 SS -> D41
       NFC 5 SS -> D42
       NFC 6 SS -> D43
 
@@ -100,11 +100,6 @@ constexpr uint8_t CABLE_COUNT = 6;
 constexpr uint8_t SOCKET_COUNT = 8;
 constexpr uint8_t NFC_COUNT = 6;
 
-static_assert(
-  CONTACT_COUNT == NFC_COUNT,
-  "Jeder NFC-Reader braucht genau einen zugeordneten Contact."
-);
-
 const uint8_t BUTTON_PINS[BUTTON_COUNT] = {2, 3};
 const uint8_t CONTACT_PINS[CONTACT_COUNT] = {4, 5, 6, 7, 8, 9};
 
@@ -129,7 +124,7 @@ const bool POT_ENABLED[POT_COUNT] = {
 const uint8_t CABLE_PINS[CABLE_COUNT] = {22, 23, 24, 25, 26, 27};
 const uint8_t SOCKET_PINS[SOCKET_COUNT] = {30, 31, 32, 33, 34, 35, 36, 37};
 
-const uint8_t NFC_SS_PINS[NFC_COUNT] = {38, 39, 40, 44, 42, 43};
+const uint8_t NFC_SS_PINS[NFC_COUNT] = {38, 39, 40, 44, 42, 43 };
 constexpr uint8_t MEGA_HARDWARE_SS_PIN = 53;
 
 /*
@@ -151,7 +146,7 @@ constexpr uint8_t MEGA_HARDWARE_SS_PIN = 53;
 constexpr bool NFC_SYSTEM_ENABLED = true;
 
 const bool NFC_ENABLED[NFC_COUNT] = {
-  true, true, true, true, true, true
+  true, false, false, false, false, true
 };
 
 /*
@@ -186,6 +181,7 @@ constexpr unsigned int CABLE_SETTLE_TIME_US = 100;
 // Pro Durchlauf wird nur ein NFC-Reader abgefragt.
 constexpr unsigned long NFC_POLL_INTERVAL_MS = 5;
 constexpr uint16_t NFC_READ_TIMEOUT_MS = 20;
+constexpr uint8_t NFC_REMOVAL_MISSES = 2;
 
 // ============================================================
 // PN532-Instanzen
@@ -204,9 +200,9 @@ Adafruit_PN532* const NFC_READERS[NFC_COUNT] = {
 
 bool nfcAvailable[NFC_COUNT] = {false, false, false, false, false, false};
 bool nfcCardPresent[NFC_COUNT] = {false, false, false, false, false, false};
-// Ein Reader sucht pro Contact-Aktivierung genau so lange, bis er einen Tag
-// gefunden hat. Erst INACTIVE -> ACTIVE schaltet die Suche wieder frei.
-bool nfcSearchArmed[NFC_COUNT] = {false, false, false, false, false, false};
+uint8_t lastNfcUid[NFC_COUNT][7] = {};
+uint8_t lastNfcUidLength[NFC_COUNT] = {0, 0, 0, 0, 0, 0};
+uint8_t nfcMissCount[NFC_COUNT] = {0, 0, 0, 0, 0, 0};
 uint8_t nextNfcReader = 0;
 unsigned long lastNfcPollTime = 0;
 
@@ -272,6 +268,25 @@ void printUid(const uint8_t* uid, uint8_t uidLength) {
     }
     Serial.print(uid[i], HEX);
   }
+}
+
+bool uidEquals(
+  const uint8_t* uidA,
+  uint8_t lengthA,
+  const uint8_t* uidB,
+  uint8_t lengthB
+) {
+  if (lengthA != lengthB) {
+    return false;
+  }
+
+  for (uint8_t i = 0; i < lengthA; i++) {
+    if (uidA[i] != uidB[i]) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // ============================================================
@@ -356,33 +371,6 @@ void printNfcStartupCheckpoint(const __FlashStringHelper* message) {
   Serial.flush();
 }
 
-/*
-  Das reine Auslassen von readPassiveTargetID() garantiert nicht, dass das
-  Antennenfeld aus ist. RFConfiguration/CfgItem 0x01 schaltet das Feld des
-  ausgewählten PN532 deshalb explizit ein bzw. aus.
-*/
-bool setNfcRfField(uint8_t readerIndex, bool enabled) {
-  if (readerIndex >= NFC_COUNT || !nfcAvailable[readerIndex]) {
-    return false;
-  }
-
-  deselectAllNfcReaders();
-
-  uint8_t command[] = {
-    PN532_COMMAND_RFCONFIGURATION,
-    0x01,
-    enabled ? 0x01 : 0x00
-  };
-
-  bool success = NFC_READERS[readerIndex]->sendCommandCheckAck(
-    command,
-    sizeof(command)
-  );
-
-  deselectAllNfcReaders();
-  return success;
-}
-
 uint32_t readNfcFirmwareWithDebug(uint8_t readerIndex) {
   const bool debugThisReader = shouldDebugNfcReader(readerIndex);
   const uint8_t attempts = debugThisReader ? NFC_FIRMWARE_RETRIES : 1;
@@ -432,10 +420,6 @@ uint32_t readNfcFirmwareWithDebug(uint8_t readerIndex) {
 }
 
 void initializeNfcReaders() {
-  // Im Diagnosemodus wirklich keinerlei NFC-/SPI-Pins treiben. Die bisherige
-  // Prüfung kam erst nach dem Setzen aller SS-Pins auf OUTPUT/HIGH. Ein falsch
-  // verdrahteter oder kurzgeschlossener Reader konnte den Mega daher trotz
-  // NFC_SYSTEM_ENABLED=false weiterhin in einen Reset-Loop bringen.
   if (!NFC_SYSTEM_ENABLED) {
     for (uint8_t i = 0; i < NFC_COUNT; i++) {
       nfcAvailable[i] = false;
@@ -562,13 +546,7 @@ void initializeNfcReaders() {
       if (debugThisReader) {
         printNfcDebug(i, F("FAILED_AT_GET_FIRMWARE_VERSION"));
         printNfcDebug(i, F("BEGIN_RETURNED_BUT_PN532_DID_NOT_ANSWER"));
-
-        Serial.print(F("NFC_DEBUG,"));
-        Serial.print(i + 1);
-        Serial.print(F(",CHECK_SS_D"));
-        Serial.print(NFC_SS_PINS[i]);
-        Serial.println(F("_POWER_GND_OR_READER_IF_SHARED_SPI_READERS_WORK"));
-        Serial.flush();
+        printNfcDebug(i, F("CHECK_SS_D41_POWER_GND_OR_READER_IF_SHARED_SPI_READERS_WORK"));
       }
       continue;
     }
@@ -592,85 +570,13 @@ void initializeNfcReaders() {
     NFC_READERS[i]->SAMConfig();
     delay(20);
 
-    // Nach der Initialisierung darf kein Reader dauerhaft ein Feld erzeugen.
-    bool rfFieldDisabled = setNfcRfField(i, false);
-
     if (debugThisReader) {
       printNfcDebug(i, F("AFTER_SAM_CONFIG"));
-      if (!rfFieldDisabled) {
-        printNfcDebug(i, F("WARNING_RF_FIELD_OFF_FAILED"));
-      }
       printNfcDebug(i, F("INIT_COMPLETE"));
     }
   }
 
   deselectAllNfcReaders();
-}
-
-void clearNfcDetection(uint8_t readerIndex, bool printRemovedEvent) {
-  if (readerIndex >= NFC_COUNT) {
-    return;
-  }
-
-  if (printRemovedEvent && nfcCardPresent[readerIndex]) {
-    Serial.print(F("NFC,"));
-    Serial.print(readerIndex + 1);
-    Serial.println(F(",REMOVED"));
-  }
-
-  nfcCardPresent[readerIndex] = false;
-}
-
-void handleNfcContactTransition(uint8_t contactIndex, bool isActive) {
-  if (contactIndex >= NFC_COUNT) {
-    return;
-  }
-
-  if (nfcAvailable[contactIndex]) {
-    setNfcRfField(contactIndex, false);
-  }
-
-  if (!isActive) {
-    nfcSearchArmed[contactIndex] = false;
-    clearNfcDetection(contactIndex, true);
-
-    if (shouldDebugNfcReader(contactIndex)) {
-      printNfcDebug(contactIndex, F("CONTACT_INACTIVE_SEARCH_RESET"));
-    }
-    return;
-  }
-
-  clearNfcDetection(contactIndex, false);
-  nfcSearchArmed[contactIndex] =
-    NFC_SYSTEM_ENABLED &&
-    NFC_ENABLED[contactIndex] &&
-    nfcAvailable[contactIndex];
-
-  if (shouldDebugNfcReader(contactIndex)) {
-    printNfcDebug(
-      contactIndex,
-      nfcSearchArmed[contactIndex]
-        ? F("CONTACT_ACTIVE_SEARCH_ARMED")
-        : F("CONTACT_ACTIVE_READER_UNAVAILABLE")
-    );
-  }
-}
-
-void initializeNfcContactGates() {
-  for (uint8_t i = 0; i < NFC_COUNT; i++) {
-    clearNfcDetection(i, false);
-
-    if (nfcAvailable[i]) {
-      setNfcRfField(i, false);
-    }
-
-    // Ein beim Einschalten bereits aktiver Contact zählt als erste Aktivierung.
-    nfcSearchArmed[i] =
-      NFC_SYSTEM_ENABLED &&
-      NFC_ENABLED[i] &&
-      nfcAvailable[i] &&
-      contactStates[i].stableState == LOW;
-  }
 }
 
 // ============================================================
@@ -712,20 +618,14 @@ void readButtonsAndContacts() {
     );
   }
 
-  for (uint8_t i = 0; i < CONTACT_COUNT; i++) {
-    bool wasActive = contactStates[i].stableState == LOW;
 
+  for (uint8_t i = 0; i < CONTACT_COUNT; i++) {
     updateDebouncedInput(
       CONTACT_PINS[i],
       "CONTACT",
       i + 1,
       contactStates[i]
     );
-
-    bool isActive = contactStates[i].stableState == LOW;
-    if (isActive != wasActive) {
-      handleNfcContactTransition(i, isActive);
-    }
   }
 }
 
@@ -883,40 +783,27 @@ void pollOneNfcReader() {
 
   lastNfcPollTime = now;
 
-  // Nur Reader berücksichtigen, deren zugehöriger Contact aktiv ist und deren
-  // Suche in diesem Aktivierungszyklus noch keinen Tag gefunden hat.
+  // Den nächsten aktivierten Reader suchen.
+  // Dadurch verschwenden deaktivierte Reader keine Poll-Zyklen.
   uint8_t readerIndex = nextNfcReader;
-  bool foundArmedReader = false;
+  bool foundEnabledReader = false;
 
   for (uint8_t attempts = 0; attempts < NFC_COUNT; attempts++) {
-    bool contactActive = contactStates[readerIndex].stableState == LOW;
-
-    if (
-      NFC_ENABLED[readerIndex] &&
-      nfcAvailable[readerIndex] &&
-      nfcSearchArmed[readerIndex] &&
-      contactActive
-    ) {
-      foundArmedReader = true;
+    if (NFC_ENABLED[readerIndex]) {
+      foundEnabledReader = true;
       break;
     }
 
     readerIndex = (readerIndex + 1) % NFC_COUNT;
   }
 
-  if (!foundArmedReader) {
+  if (!foundEnabledReader) {
     return;
   }
 
   nextNfcReader = (readerIndex + 1) % NFC_COUNT;
 
-  // Immer nur für die unmittelbar folgende Messung das Antennenfeld aktivieren.
-  if (!setNfcRfField(readerIndex, true)) {
-    setNfcRfField(readerIndex, false);
-
-    if (shouldDebugNfcReader(readerIndex)) {
-      printNfcDebug(readerIndex, F("RF_FIELD_ON_FAILED"));
-    }
+  if (!nfcAvailable[readerIndex]) {
     return;
   }
 
@@ -930,28 +817,48 @@ void pollOneNfcReader() {
     NFC_READ_TIMEOUT_MS
   );
 
-  // Egal ob ein Tag gefunden wurde: danach ist das Feld wieder aus.
-  bool rfFieldDisabled = setNfcRfField(readerIndex, false);
-
-  if (!rfFieldDisabled && shouldDebugNfcReader(readerIndex)) {
-    printNfcDebug(readerIndex, F("WARNING_RF_FIELD_OFF_FAILED"));
-  }
-
   if (!success) {
+    if (nfcMissCount[readerIndex] < 255) {
+      nfcMissCount[readerIndex]++;
+    }
+
+    if (
+      nfcCardPresent[readerIndex] &&
+      nfcMissCount[readerIndex] >= NFC_REMOVAL_MISSES
+    ) {
+      nfcCardPresent[readerIndex] = false;
+      lastNfcUidLength[readerIndex] = 0;
+
+      Serial.print(F("NFC,"));
+      Serial.print(readerIndex + 1);
+      Serial.println(F(",REMOVED"));
+    }
+
     return;
   }
 
-  nfcCardPresent[readerIndex] = true;
-  nfcSearchArmed[readerIndex] = false;
+  nfcMissCount[readerIndex] = 0;
 
-  Serial.print(F("NFC,"));
-  Serial.print(readerIndex + 1);
-  Serial.print(F(",PRESENT,"));
-  printUid(uid, uidLength);
-  Serial.println();
+  bool uidChanged = !uidEquals(
+    uid,
+    uidLength,
+    lastNfcUid[readerIndex],
+    lastNfcUidLength[readerIndex]
+  );
 
-  if (shouldDebugNfcReader(readerIndex)) {
-    printNfcDebug(readerIndex, F("TAG_FOUND_SEARCH_LOCKED"));
+  if (!nfcCardPresent[readerIndex] || uidChanged) {
+    nfcCardPresent[readerIndex] = true;
+    lastNfcUidLength[readerIndex] = uidLength;
+
+    for (uint8_t i = 0; i < uidLength; i++) {
+      lastNfcUid[readerIndex][i] = uid[i];
+    }
+
+    Serial.print(F("NFC,"));
+    Serial.print(readerIndex + 1);
+    Serial.print(F(",PRESENT,"));
+    printUid(uid, uidLength);
+    Serial.println();
   }
 }
 
@@ -984,7 +891,6 @@ void setup() {
   Serial.println(F("SYSTEM,INIT,NFC"));
   Serial.flush();
   initializeNfcReaders();
-  initializeNfcContactGates();
 
   Serial.println(F("SYSTEM,READY"));
   printInitialDigitalStates();

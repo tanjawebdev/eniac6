@@ -1,0 +1,27 @@
+
+1,2,3 & 6 klappt inkl. kontaktsensor logik
+
+lage: 5 no firmware
+5 und 6 vertauscht -> dann geht 6 steckung auch nicht
+5 ging kurz vorher noch. why the change?
+
+
+steckung von reader 6 bei reader 4 -> immer noch kein signal
+
+next: wieder 6 auf 6 probieren, 4 & 5 lose
+--> klappt
+
+4 lose, rest normal -> 5 passt nicht
+
+
+
+26.8.:
+4 lose, rest normal -> 5er passt 
+(warum? gleiche steckung letztens noch nicht ok.)
+
+alle normal gesteckt -> 4er geht nicht
+
+5 offen, kabel von 5 bei 4 angesteckt - 4 geht immer noch nicht
+
+
+4 offen, kabel von 4 in 5 angesteckt -> 4 geht (quasi mit nfc von 5, also steckung richtig)
