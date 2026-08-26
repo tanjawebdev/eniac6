@@ -30,7 +30,7 @@
 #include <Adafruit_PN532.h>
 
 // PN532
-#define PN532_SS 49
+#define PN532_SS 38
 
 // Digitale Eingänge
 #define BUTTON_1_PIN 7
@@ -91,7 +91,7 @@ void setup() {
   pinMode(BUTTON_1_PIN, INPUT_PULLUP);
   pinMode(BUTTON_2_PIN, INPUT_PULLUP);
   pinMode(CONTACT_SENSOR_PIN, INPUT_PULLUP);
-
+  pinMode(12, INPUT);
   Serial.println(F("PN532 wird initialisiert ..."));
 
   nfc.begin();

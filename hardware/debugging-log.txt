@@ -23,5 +23,6 @@ alle normal gesteckt -> 4er geht nicht
 
 5 offen, kabel von 5 bei 4 angesteckt - 4 geht immer noch nicht
 
-
 4 offen, kabel von 4 in 5 angesteckt -> 4 geht (quasi mit nfc von 5, also steckung richtig)
+
+fazit: NFC reader 4 hat was

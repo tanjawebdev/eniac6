@@ -151,7 +151,7 @@ constexpr uint8_t MEGA_HARDWARE_SS_PIN = 53;
 constexpr bool NFC_SYSTEM_ENABLED = true;
 
 const bool NFC_ENABLED[NFC_COUNT] = {
-  true, true, true, true, true, true
+  true, false, false, false, false, false
 };
 
 /*
@@ -185,7 +185,14 @@ constexpr unsigned int CABLE_SETTLE_TIME_US = 100;
 
 // Pro Durchlauf wird nur ein NFC-Reader abgefragt.
 constexpr unsigned long NFC_POLL_INTERVAL_MS = 5;
-constexpr uint16_t NFC_READ_TIMEOUT_MS = 20;
+// Ein einzelner PN532-Suchbefehl darf ausreichend lange laufen, damit ein Tag
+// auch bei schwacher Kopplung sauber aktiviert werden kann. Die logische Suche
+// hat keinen Timeout: Solange der Contact aktiv und die Suche armed ist, folgen
+// weitere Versuche. Der kurze technische Timeout hält lediglich den Arduino-
+// Loop reaktionsfähig, damit ein deaktivierter Contact erkannt werden kann.
+constexpr uint16_t NFC_READ_TIMEOUT_MS = 100;
+constexpr uint16_t NFC_TIMEOUT_MARGIN_MS = 20;
+constexpr unsigned long NFC_COMMAND_RECOVERY_DELAY_MS = 5;
 
 // ============================================================
 // PN532-Instanzen
@@ -338,6 +345,147 @@ void deselectAllNfcReaders() {
   }
 }
 
+/*
+  Laut PN532-Protokoll bricht ein vom Host gesendeter ACK-Frame einen noch
+  laufenden Befehl ab. Das ist nach einem Timeout von InListPassiveTarget
+  wichtig: readPassiveTargetID() kann bereits false zurückgeben, während der
+  PN532 intern weiterhin nach einem Tag sucht und deshalb den nächsten Befehl
+  noch nicht sauber annimmt.
+
+  Bei SPI muss vor dem eigentlichen ACK-Frame das DATAWRITE-Byte stehen.
+*/
+void abortPendingNfcCommand(uint8_t readerIndex) {
+  if (readerIndex >= NFC_COUNT || !nfcAvailable[readerIndex]) {
+    return;
+  }
+
+  const uint8_t abortFrame[] = {
+    PN532_SPI_DATAWRITE,
+    0x00, 0x00, 0xFF, 0x00, 0xFF, 0x00
+  };
+
+  deselectAllNfcReaders();
+
+  SPI.beginTransaction(SPISettings(1000000, LSBFIRST, SPI_MODE0));
+  digitalWrite(NFC_SS_PINS[readerIndex], LOW);
+
+  for (uint8_t i = 0; i < sizeof(abortFrame); i++) {
+    SPI.transfer(abortFrame[i]);
+  }
+
+  digitalWrite(NFC_SS_PINS[readerIndex], HIGH);
+  SPI.endTransaction();
+
+  delay(2);
+  deselectAllNfcReaders();
+}
+
+/*
+  sendCommandCheckAck() wartet bei SPI zwar auf den Response-Frame, liest ihn
+  bei manchen Adafruit-PN532-Methoden aber nicht aus. Diese Hilfsfunktion liest
+  einen kurzen PN532-Response vollständig und prüft Header, Länge, Command,
+  Datenchecksumme und Postamble. Dadurch bleibt kein alter Response auf dem
+  Reader liegen, der das nächste Kommando aus dem Takt bringen könnte.
+*/
+bool readNfcResponseFrame(
+  uint8_t readerIndex,
+  uint8_t command,
+  uint8_t* responseData,
+  uint8_t responseDataLength
+) {
+  if (readerIndex >= NFC_COUNT || !nfcAvailable[readerIndex]) {
+    return false;
+  }
+
+  const uint8_t payloadLength = 2 + responseDataLength; // TFI + Response-Code
+  const uint8_t frameLength = payloadLength + 7;
+
+  if (frameLength > 16) {
+    return false;
+  }
+
+  uint8_t frame[16] = {0};
+
+  deselectAllNfcReaders();
+  delay(1);
+
+  SPI.beginTransaction(SPISettings(1000000, LSBFIRST, SPI_MODE0));
+  digitalWrite(NFC_SS_PINS[readerIndex], LOW);
+  SPI.transfer(PN532_SPI_DATAREAD);
+
+  for (uint8_t i = 0; i < frameLength; i++) {
+    frame[i] = SPI.transfer(0x00);
+  }
+
+  digitalWrite(NFC_SS_PINS[readerIndex], HIGH);
+  SPI.endTransaction();
+  deselectAllNfcReaders();
+
+  if (
+    frame[0] != 0x00 ||
+    frame[1] != 0x00 ||
+    frame[2] != 0xFF ||
+    frame[3] != payloadLength ||
+    static_cast<uint8_t>(frame[3] + frame[4]) != 0x00 ||
+    frame[5] != PN532_PN532TOHOST ||
+    frame[6] != static_cast<uint8_t>(command + 1) ||
+    frame[frameLength - 1] != 0x00
+  ) {
+    return false;
+  }
+
+  uint8_t checksum = 0;
+  for (uint8_t i = 5; i < frameLength - 1; i++) {
+    checksum += frame[i];
+  }
+
+  if (checksum != 0x00) {
+    return false;
+  }
+
+  for (uint8_t i = 0; i < responseDataLength; i++) {
+    responseData[i] = frame[7 + i];
+  }
+
+  return true;
+}
+
+/*
+  InListPassiveTarget aktiviert einen gefundenen Tag intern als Target. Erst
+  InRelease beendet diesen Target-Zustand korrekt. Tg=0x00 gibt alle Targets
+  frei; der PN532 wechselt danach selbst in Standby und schaltet das RF-Feld ab.
+*/
+bool releaseNfcTargets(uint8_t readerIndex) {
+  if (readerIndex >= NFC_COUNT || !nfcAvailable[readerIndex]) {
+    return false;
+  }
+
+  deselectAllNfcReaders();
+
+  uint8_t command[] = {
+    PN532_COMMAND_INRELEASE,
+    0x00
+  };
+
+  if (!NFC_READERS[readerIndex]->sendCommandCheckAck(
+    command,
+    sizeof(command)
+  )) {
+    deselectAllNfcReaders();
+    return false;
+  }
+
+  uint8_t status = 0xFF;
+  bool responseValid = readNfcResponseFrame(
+    readerIndex,
+    PN532_COMMAND_INRELEASE,
+    &status,
+    1
+  );
+
+  return responseValid && status == 0x00;
+}
+
 void printNfcDebug(uint8_t readerIndex, const __FlashStringHelper* message) {
   Serial.print(F("NFC_DEBUG,"));
   Serial.print(readerIndex + 1);
@@ -356,38 +504,13 @@ void printNfcStartupCheckpoint(const __FlashStringHelper* message) {
   Serial.flush();
 }
 
-/*
-  Das reine Auslassen von readPassiveTargetID() garantiert nicht, dass das
-  Antennenfeld aus ist. RFConfiguration/CfgItem 0x01 schaltet das Feld des
-  ausgewählten PN532 deshalb explizit ein bzw. aus.
-*/
-bool setNfcRfField(uint8_t readerIndex, bool enabled) {
-  if (readerIndex >= NFC_COUNT || !nfcAvailable[readerIndex]) {
-    return false;
-  }
-
-  deselectAllNfcReaders();
-
-  uint8_t command[] = {
-    PN532_COMMAND_RFCONFIGURATION,
-    0x01,
-    enabled ? 0x01 : 0x00
-  };
-
-  bool success = NFC_READERS[readerIndex]->sendCommandCheckAck(
-    command,
-    sizeof(command)
-  );
-
-  deselectAllNfcReaders();
-  return success;
-}
-
 uint32_t readNfcFirmwareWithDebug(uint8_t readerIndex) {
   const bool debugThisReader = shouldDebugNfcReader(readerIndex);
   const uint8_t attempts = debugThisReader ? NFC_FIRMWARE_RETRIES : 1;
 
   uint32_t versionData = 0;
+  uint32_t nfcStatus = 0;
+
 
   for (uint8_t attempt = 1; attempt <= attempts; attempt++) {
     // Vor jedem Versuch sicherstellen, dass kein anderer PN532 selektiert ist.
@@ -411,6 +534,7 @@ uint32_t readNfcFirmwareWithDebug(uint8_t readerIndex) {
       Serial.print(readerIndex + 1);
       Serial.print(F(",FIRMWARE_RAW,0x"));
       Serial.println(versionData, HEX);
+      Serial.println(nfcStatus);
     }
 
     if (versionData != 0) {
@@ -592,13 +716,31 @@ void initializeNfcReaders() {
     NFC_READERS[i]->SAMConfig();
     delay(20);
 
-    // Nach der Initialisierung darf kein Reader dauerhaft ein Feld erzeugen.
-    bool rfFieldDisabled = setNfcRfField(i, false);
+    /*
+      Nur einen passiven Aktivierungsversuch pro Poll ausführen. Ohne diese
+      Begrenzung kann InListPassiveTarget nach dem Library-Timeout der Arduino-
+      Bibliothek im PN532 weiterlaufen und den nächsten Befehl blockieren.
+      Da wir ohnehin regelmäßig neu pollen, ist ein kurzer abgeschlossener
+      Versuch zuverlässiger als ein intern endlos laufender Suchbefehl.
+    */
+    bool passiveRetriesConfigured =
+      NFC_READERS[i]->setPassiveActivationRetries(0x00);
+
+    if (passiveRetriesConfigured) {
+      // Den fertigen RFConfiguration-Response vollständig konsumieren.
+      passiveRetriesConfigured = readNfcResponseFrame(
+        i,
+        PN532_COMMAND_RFCONFIGURATION,
+        nullptr,
+        0
+      );
+    }
+    delay(5);
 
     if (debugThisReader) {
       printNfcDebug(i, F("AFTER_SAM_CONFIG"));
-      if (!rfFieldDisabled) {
-        printNfcDebug(i, F("WARNING_RF_FIELD_OFF_FAILED"));
+      if (!passiveRetriesConfigured) {
+        printNfcDebug(i, F("WARNING_PASSIVE_RETRIES_CONFIG_FAILED"));
       }
       printNfcDebug(i, F("INIT_COMPLETE"));
     }
@@ -624,10 +766,6 @@ void clearNfcDetection(uint8_t readerIndex, bool printRemovedEvent) {
 void handleNfcContactTransition(uint8_t contactIndex, bool isActive) {
   if (contactIndex >= NFC_COUNT) {
     return;
-  }
-
-  if (nfcAvailable[contactIndex]) {
-    setNfcRfField(contactIndex, false);
   }
 
   if (!isActive) {
@@ -659,10 +797,6 @@ void handleNfcContactTransition(uint8_t contactIndex, bool isActive) {
 void initializeNfcContactGates() {
   for (uint8_t i = 0; i < NFC_COUNT; i++) {
     clearNfcDetection(i, false);
-
-    if (nfcAvailable[i]) {
-      setNfcRfField(i, false);
-    }
 
     // Ein beim Einschalten bereits aktiver Contact zählt als erste Aktivierung.
     nfcSearchArmed[i] =
@@ -910,18 +1044,10 @@ void pollOneNfcReader() {
 
   nextNfcReader = (readerIndex + 1) % NFC_COUNT;
 
-  // Immer nur für die unmittelbar folgende Messung das Antennenfeld aktivieren.
-  if (!setNfcRfField(readerIndex, true)) {
-    setNfcRfField(readerIndex, false);
-
-    if (shouldDebugNfcReader(readerIndex)) {
-      printNfcDebug(readerIndex, F("RF_FIELD_ON_FAILED"));
-    }
-    return;
-  }
-
   uint8_t uid[7];
   uint8_t uidLength = 0;
+
+  unsigned long readStartedAt = millis();
 
   bool success = NFC_READERS[readerIndex]->readPassiveTargetID(
     PN532_MIFARE_ISO14443A,
@@ -930,15 +1056,58 @@ void pollOneNfcReader() {
     NFC_READ_TIMEOUT_MS
   );
 
-  // Egal ob ein Tag gefunden wurde: danach ist das Feld wieder aus.
-  bool rfFieldDisabled = setNfcRfField(readerIndex, false);
+  unsigned long readDurationMs = millis() - readStartedAt;
+  bool commandTimedOut =
+    !success &&
+    readDurationMs + NFC_TIMEOUT_MARGIN_MS >= NFC_READ_TIMEOUT_MS;
 
-  if (!rfFieldDisabled && shouldDebugNfcReader(readerIndex)) {
-    printNfcDebug(readerIndex, F("WARNING_RF_FIELD_OFF_FAILED"));
+  /*
+    Mit MxRtyPassiveActivation = 0 liefert der PN532 auch bei "kein Tag" einen
+    abgeschlossenen Response. readPassiveTargetID() gibt dann ebenfalls false
+    zurück. Dieser normale, schnelle Fall darf nicht abgebrochen werden.
+
+    Verbraucht ein erfolgloser Aufruf dagegen nahezu den kompletten Library-
+    Timeout, läuft InListPassiveTarget im PN532 wahrscheinlich noch. Das kommt
+    besonders bei einem Tag im Randbereich vor. Der ACK-Abbruch beendet genau
+    diesen noch laufenden Versuch; die Suche bleibt für den nächsten Poll armed.
+  */
+  if (commandTimedOut) {
+    abortPendingNfcCommand(readerIndex);
+    delay(NFC_COMMAND_RECOVERY_DELAY_MS);
+
+    if (shouldDebugNfcReader(readerIndex)) {
+      printNfcDebug(readerIndex, F("SEARCH_ATTEMPT_TIMEOUT_ABORTED"));
+    }
+  } else {
+    delay(2);
   }
 
   if (!success) {
     return;
+  }
+
+  /*
+    Ein erfolgreicher InListPassiveTarget-Aufruf hinterlässt den Tag als
+    aktiviertes Target. InRelease(0x00) gibt ihn frei und schaltet das RF-Feld
+    über den vorgesehenen PN532-Zustandswechsel automatisch aus.
+  */
+  bool targetsReleased = releaseNfcTargets(readerIndex);
+
+  if (!targetsReleased) {
+    abortPendingNfcCommand(readerIndex);
+    delay(NFC_COMMAND_RECOVERY_DELAY_MS);
+    targetsReleased = releaseNfcTargets(readerIndex);
+
+    if (shouldDebugNfcReader(readerIndex)) {
+      printNfcDebug(
+        readerIndex,
+        targetsReleased
+          ? F("TARGET_RELEASE_RECOVERED")
+          : F("WARNING_TARGET_RELEASE_FAILED")
+      );
+    }
+  } else if (shouldDebugNfcReader(readerIndex)) {
+    printNfcDebug(readerIndex, F("TARGET_RELEASED_RF_OFF"));
   }
 
   nfcCardPresent[readerIndex] = true;
