@@ -15,7 +15,9 @@
 #include <SPI.h>
 #include <Adafruit_PN532.h>
 
-constexpr uint8_t PN532_SS = 38;
+// SS pins are: 38, 39, 40, 44, 42, 43
+const uint8_t ALL_NFC_SS_PINS[] = {43, 44, 7, 42, 41, 40};
+constexpr uint8_t PN532_SS = 43;
 constexpr uint8_t HARDWARE_SS = 53;
 
 Adafruit_PN532 nfc(PN532_SS);
@@ -37,12 +39,15 @@ void setup() {
   pinMode(HARDWARE_SS, OUTPUT);
   digitalWrite(HARDWARE_SS, HIGH);
 
-  pinMode(PN532_SS, OUTPUT);
-  digitalWrite(PN532_SS, HIGH);
+  for (uint8_t pin : ALL_NFC_SS_PINS) {
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, HIGH);
+  }
 
   Serial.println(F("PN532 wird initialisiert ..."));
 
   nfc.begin();
+  delay(10);
 
   uint32_t versionData = nfc.getFirmwareVersion();
 
@@ -64,10 +69,6 @@ void setup() {
 
     nfc.SAMConfig();
   }
-
-  Serial.println(F("--------------------------------"));
-  Serial.println(F("NFC-Test bereit."));
-  Serial.println(F("--------------------------------"));
 }
 
 void loop() {

@@ -26,3 +26,16 @@ alle normal gesteckt -> 4er geht nicht
 4 offen, kabel von 4 in 5 angesteckt -> 4 geht (quasi mit nfc von 5, also steckung richtig)
 
 fazit: NFC reader 4 hat was
+
+
+
+NEUES PROBLEM MIT RESET
+
+Ich habe alle NFC außer dem 2. wieder angesteckt -> ohne Reset. 
+
+Und ich hab jetzt ganz rudimentäre files erstellt: 
+read_nfc_uid_bare soll einfach nur einen einzelnen SS pin lesen (gerade ist 38 drin) -> geht nicht
+read_nfcs_only soll die 5 angesteckten nfcs lesen (gehen randomly schon, jedes mal upload unterschiedlich viele was mega komisch ist)
+
+
+im cpp file -> 1000000 auf 500000 gestellt

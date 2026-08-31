@@ -13,7 +13,7 @@
 
 constexpr uint8_t HARDWARE_SS_PIN = 53;
 
-const uint8_t NFC_SS_PINS[] = {38, 40, 44, 42, 43};
+const uint8_t NFC_SS_PINS[] = {43, 44, 7, 42, 41, 40};
 constexpr uint8_t NFC_COUNT = sizeof(NFC_SS_PINS) / sizeof(NFC_SS_PINS[0]);
 
 constexpr unsigned long NFC_POLL_INTERVAL_MS = 10;
@@ -22,13 +22,14 @@ constexpr uint16_t NFC_READ_TIMEOUT_MS = 100;
 // Für sechs Reader werden sechs PN532-Instanzen benötigt. Das SS-Pin-Array
 // darüber bleibt die zentrale Stelle für die Pinbelegung.
 Adafruit_PN532 nfc1(NFC_SS_PINS[0]);
-Adafruit_PN532 nfc3(NFC_SS_PINS[1]);
-Adafruit_PN532 nfc4(NFC_SS_PINS[2]);
-Adafruit_PN532 nfc5(NFC_SS_PINS[3]);
-Adafruit_PN532 nfc6(NFC_SS_PINS[4]);
+Adafruit_PN532 nfc2(NFC_SS_PINS[1]);
+Adafruit_PN532 nfc3(NFC_SS_PINS[2]);
+Adafruit_PN532 nfc4(NFC_SS_PINS[3]);
+Adafruit_PN532 nfc5(NFC_SS_PINS[4]);
+Adafruit_PN532 nfc6(NFC_SS_PINS[5]);
 
 Adafruit_PN532* const NFC_READERS[NFC_COUNT] = {
-  &nfc1, &nfc3, &nfc4, &nfc5, &nfc6
+  &nfc1, &nfc2, &nfc3, &nfc4, &nfc5, &nfc6
 };
 
 bool nfcAvailable[NFC_COUNT] = {false};
@@ -64,9 +65,11 @@ void initializeReaders() {
 
   deselectAllReaders();
   SPI.begin();
+  delay(500);
 
   for (uint8_t i = 0; i < NFC_COUNT; i++) {
     deselectAllReaders();
+    delay(100);
 
     Serial.print(F("NFC_READER,"));
     Serial.print(i + 1);
@@ -125,10 +128,15 @@ void pollNextReader() {
     return;
   }
 
+
   lastPollTime = now;
 
   uint8_t readerIndex = nextReader;
   nextReader = (nextReader + 1) % NFC_COUNT;
+
+  //Serial.print(nextReader);
+  //Serial.println(F(",nextReader"));
+
 
   if (!nfcAvailable[readerIndex]) {
     return;
@@ -182,6 +190,7 @@ void setup() {
 
   Serial.println(F("SYSTEM,START,NFC_ONLY_TEST"));
   initializeReaders();
+  delay(2000);
   Serial.println(F("SYSTEM,READY"));
 }
 
