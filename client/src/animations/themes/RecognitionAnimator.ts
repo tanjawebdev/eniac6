@@ -41,8 +41,8 @@ export class RecognitionAnimator implements ThemeAnimator {
     _startTime: number
   ): void {
     // Read pots
-    const targetDensity = config.pot0 / 1023; // DENSITY (ratio of blurred vs sharp)
-    const speedVal = 0.05 + (config.pot1 / 1023) * 5; // SPEED of shift transition
+    const targetDensity = config.pot1 / 1023; // DENSITY (ratio of blurred vs sharp)
+    const speedVal = 0.05 + (config.pot0 / 1023) * 5; // SPEED of shift transition
     const blurVal = config.pot2 / 1023; // BLUR level (0 to 1)
     const pot3Val = config.pot3 / 1023; // ALPHA (pot3 controls thickness/boldness of blurred layer only)
 

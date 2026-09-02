@@ -11,7 +11,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    hmr: false,
+    hmr: true,
     fs: {
       // Allow importing from shared/ directory above client root
       allow: ['..'],

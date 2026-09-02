@@ -4,8 +4,8 @@
 
 .quote-block {
   position: absolute;
-  left: 160px;
-  right: 160px;
+  left: 250px;
+  right: 250px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 20;
@@ -14,7 +14,7 @@
   /* Glassmorphism card background */
   background: rgba(12, 12, 12, 0.05);
   backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(50px);
   border: 3px solid rgba(255, 255, 255, 1);
   box-shadow: 0 0 20px 6px #ffffff63 inset;
 
@@ -62,9 +62,9 @@
 .quote-block-name {
   padding: 0 40px;
   font-family: var(--font-mono);
-  font-size: 60px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
+  font-size: 55px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
   color: #ffffff;
   text-transform: uppercase;
   white-space: nowrap;
@@ -73,12 +73,12 @@
 }
 
 .quote-block-years {
-  padding: 0 40px;
+  padding: 0 70px;
   font-family: var(--font-mono);
-  font-size: 60px;
-  font-weight: 500;
+  font-size: 55px;
+  font-weight: 400;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 1);
   white-space: nowrap;
   border-left: 3px solid rgba(255, 255, 255, 1);
   height: 100%;
@@ -88,27 +88,27 @@
 
 /* ---- Quote Area ---- */
 .quote-block-quote {
-  padding: 90px 60px 100px 60px;
+  padding: 130px 60px 130px 60px;
   position: relative;
   border-bottom: 3px solid rgba(255, 255, 255, 1);
 }
 
 .quote-block-mark {
   font-family: var(--font-display);
-  font-size: 200px;
+  font-size: 170px;
   font-weight: 700;
   color: rgba(255, 255, 255, 1);
-  line-height: 0.5;
+  line-height: 0.4;
   position: absolute;
-  top: 140px;
+  top: 180px;
   left: 100px;
   user-select: none;
 }
 
 .quote-block-text {
-  font-family: var(--font-mono);
-  font-size: 100px;
-  font-weight: 400;
+  font-family: var(--font-display);
+  font-size: 80px;
+  font-weight: 500;
   line-height: 1.25;
   color: #ffffff;
   margin: 0;
@@ -138,13 +138,13 @@
 
 /* ---- Context Section ---- */
 .quote-block-context {
-  padding: 60px 110px;
+  padding: 60px 110px 80px;
   border-bottom: 3px solid rgba(255, 255, 255, 1);
 }
 
 .quote-block-context-label {
-  font-family: var(--font-mono);
-  font-size: 55px;
+  font-family: var(--font-sans);
+  font-size: 50px;
   font-weight: 700;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 1);
@@ -154,8 +154,8 @@
 }
 
 .quote-block-context-text {
-  font-family: var(--font-mono);
-  font-size: 55px;
+  font-family: var(--font-sans);
+  font-size: 48px;
   font-weight: 400;
   line-height: 1.4;
   color: rgba(255, 255, 255, 1);
@@ -166,8 +166,8 @@
 .quote-block-source {
   padding: 60px 110px;
   font-family: var(--font-mono);
-  font-size: 35px;
+  font-size: 32px;
   font-weight: 400;
   letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 1);
 }

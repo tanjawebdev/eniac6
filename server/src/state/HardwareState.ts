@@ -33,6 +33,13 @@ export class HardwareStateManager extends EventEmitter {
 
       case 'contact':
         this.state.contacts[event.id] = event.active;
+        if (!event.active && this.state.nfc[event.id]) {
+          this.state.nfc[event.id] = {
+            present: false,
+            uid: '',
+            lastSeen: this.state.nfc[event.id].lastSeen,
+          };
+        }
         break;
 
       case 'banana': {

@@ -6,6 +6,7 @@ import App from './App';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
 import '@fontsource/ibm-plex-mono/700.css';
+import '@fontsource-variable/ibm-plex-sans';
 import '@fontsource/space-grotesk/400.css';
 import '@fontsource/space-grotesk/500.css';
 import '@fontsource/space-grotesk/600.css';

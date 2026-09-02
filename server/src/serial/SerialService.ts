@@ -170,7 +170,23 @@ export class SerialService extends EventEmitter implements IHardwareSource {
       }
 
       case 'contact': {
-        // Forward raw contact event; NFC Arduino handles the coupled NFC logic.
+        // Forward raw contact event; when contact is inactive, also ensure NFC state is cleared
+        if (!event.active) {
+          this.nfcReaderUids.delete(event.id);
+
+          const socket = this.cableToSocket.get(event.id);
+          if (socket !== undefined) {
+            this.emitBananaEvent(event.id, socket, true, timing);
+          }
+
+          const nfcRemovalEvent: HardwareEvent = {
+            type: 'nfc',
+            reader: event.id,
+            present: false,
+            uid: '',
+          };
+          this.emit('data', nfcRemovalEvent, timing);
+        }
         this.emit('data', event, timing);
         break;
       }

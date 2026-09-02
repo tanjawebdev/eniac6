@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
-import { useAppStore } from './stores/appStore';
+import { useAppStore, DEFAULT_ACTIVE_COLOR } from './stores/appStore';
 import { useHardwareStore } from './stores/hardwareStore';
 import { AppShell } from './layouts/AppShell/AppShell';
 import { DebugPage } from './pages/DebugPage/DebugPage';
 import { PROGRAMMERS } from './data/programmers';
-import type { ProgrammerKey } from '@shared/constants';
+import { UID_TO_PROGRAMMER, type ProgrammerKey } from '@shared/constants';
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -44,8 +44,10 @@ export default function App() {
     }
   }, [introPressed]);
 
-  // Monitor contact sensors to auto-select programmers in HomeScene
+  // Monitor contact sensors to auto-select / deselect programmers in HomeScene
   const contacts = useHardwareStore((state) => state.contacts);
+  const nfcStates = useHardwareStore((state) => state.nfc);
+
   useEffect(() => {
     // Only trigger in home scene
     if (currentScene !== 'home') return;
@@ -53,16 +55,22 @@ export default function App() {
     // Find if any contact sensor is activated
     const activeContactIndex = contacts.findIndex((active) => active);
     if (activeContactIndex !== -1) {
-      // Map contact index (0-5) to programmer key
-      const keys: ProgrammerKey[] = ['mcnulty', 'jennings', 'snyder', 'wescoff', 'bilas', 'lichterman'];
-      const key = keys[activeContactIndex];
+      const nfcTag = nfcStates[activeContactIndex];
+      const key = (nfcTag?.present && nfcTag.uid
+        ? UID_TO_PROGRAMMER[nfcTag.uid.trim().toUpperCase()]
+        : null) ?? (['mcnulty', 'jennings', 'snyder', 'wescoff', 'bilas', 'lichterman'][activeContactIndex] as ProgrammerKey);
+
       if (key) {
         const prog = PROGRAMMERS[key];
         selectProgrammer(key);
         useAppStore.getState().setActiveColor(prog.color);
       }
+    } else {
+      // No contact is active → deselect programmer and reset color
+      selectProgrammer(null);
+      useAppStore.getState().setActiveColor(DEFAULT_ACTIVE_COLOR);
     }
-  }, [contacts, currentScene, selectProgrammer]);
+  }, [contacts, nfcStates, currentScene, selectProgrammer]);
 
 
 

@@ -90,7 +90,15 @@ export const useHardwareStore = create<HardwareStoreState>((set) => ({
           if (event.id >= 0 && event.id < nextContacts.length) {
             nextContacts[event.id] = event.active;
           }
-          return { contacts: nextContacts };
+          const nextNfc = [...state.nfc];
+          if (!event.active && event.id >= 0 && event.id < nextNfc.length) {
+            nextNfc[event.id] = {
+              present: false,
+              uid: '',
+              lastSeen: nextNfc[event.id]?.lastSeen ?? 0,
+            };
+          }
+          return { contacts: nextContacts, nfc: nextNfc };
         }
         case 'button': {
           const nextButtons = {
@@ -152,7 +160,7 @@ export const useHardwareStore = create<HardwareStoreState>((set) => ({
             nextNfc[event.reader] = {
               present: event.present,
               uid: event.uid,
-              lastSeen: Date.now(),
+              lastSeen: event.present ? Date.now() : (nextNfc[event.reader]?.lastSeen ?? 0),
             };
           }
           return { nfc: nextNfc };

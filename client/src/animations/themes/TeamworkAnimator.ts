@@ -25,8 +25,8 @@ export class TeamworkAnimator implements ThemeAnimator {
     ctx.fillStyle = config.backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
-    const circleRadius = Math.max(3, Math.round(3 + (config.pot0 / 1023) * 25));
-    const speedVal = 0.3 + (config.pot1 / 1023) * 20;
+    const circleRadius = Math.max(3, Math.round(3 + (config.pot1 / 1023) * 25));
+    const speedVal = 0.3 + (config.pot0 / 1023) * 20;
     const count = Math.max(5, Math.round(5 + (config.pot2 / 1023) * 40));
     const lineDistance = Math.max(30, Math.round(30 + (config.pot3 / 1023) * 1000));
 
