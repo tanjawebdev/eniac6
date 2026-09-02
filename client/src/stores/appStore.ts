@@ -4,6 +4,7 @@ import type { ThemeId, ProgrammerKey } from '@shared/constants';
 
 interface AppStoreState {
   currentScene: SceneName;
+  introRunId: number;
   previousScene: SceneName | null;
   selectedProgrammer: ProgrammerKey | null;
   selectedTheme: ThemeId | null;
@@ -35,6 +36,7 @@ export const DEFAULT_ACTIVE_COLOR = '#ffffff';
 
 export const useAppStore = create<AppStoreState>((set) => ({
   currentScene: 'intro',
+  introRunId: 0,
   previousScene: null,
   selectedProgrammer: null,
   selectedTheme: null,
@@ -70,6 +72,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
 
   showIntro: () =>
     set((state) => ({
+      introRunId: state.introRunId + 1,
       previousScene: state.currentScene,
       currentScene: 'intro',
       selectedProgrammer: null,
@@ -93,7 +96,8 @@ export const useAppStore = create<AppStoreState>((set) => ({
     }),
 
   resetInstallation: () =>
-    set(() => ({
+    set((state) => ({
+      introRunId: state.introRunId + 1,
       currentScene: 'intro',
       previousScene: null,
       selectedProgrammer: null,

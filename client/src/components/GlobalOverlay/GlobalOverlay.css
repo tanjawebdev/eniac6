@@ -43,9 +43,7 @@
   pointer-events: none;
 }
 
-/* Difference blend mode for Recognition theme */
-.theme-recognition .overlay-texture {
-  mix-blend-mode: difference;
+.is-theme .overlay-texture {
   opacity: 0;
 }
 

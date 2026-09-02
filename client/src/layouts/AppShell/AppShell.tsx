@@ -14,6 +14,7 @@ export function AppShell() {
   const debugVisible = useAppStore((state) => state.debugVisible);
   const devScale = useAppStore((state) => state.devScale);
   const activeColor = useAppStore((state) => state.activeColor);
+  const currentScene = useAppStore((state) => state.currentScene);
   const selectedTheme = useAppStore((state) => state.selectedTheme);
   const selectedProgKey = useAppStore((state) => state.selectedProgrammer);
   const nfcStates = useHardwareStore((state) => state.nfc);
@@ -98,7 +99,7 @@ export function AppShell() {
 
   return (
     <div className={`app-shell-container ${devScale ? 'scaled-mode' : ''}`}>
-      <div className={`app-shell ${selectedTheme ? 'is-theme' : ''} ${allInserted ? 'all-inserted' : ''} theme-${selectedTheme || 'none'}`} style={shellStyle}>
+      <div className={`app-shell ${currentScene === 'intro' ? 'is-intro' : ''} ${selectedTheme ? 'is-theme' : ''} ${allInserted ? 'all-inserted' : ''} theme-${selectedTheme || 'none'}`} style={shellStyle}>
         {/* Particle/Shape Animation Canvas */}
         <CanvasBackground />
 

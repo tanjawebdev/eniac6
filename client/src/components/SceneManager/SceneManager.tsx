@@ -13,12 +13,13 @@ import './SceneManager.css';
 
 export function SceneManager() {
   const currentScene = useAppStore((state) => state.currentScene);
+  const introRunId = useAppStore((state) => state.introRunId);
   const transitionConfig = SCENE_TRANSITIONS[currentScene] || DEFAULT_TRANSITION;
 
   const renderScene = () => {
     switch (currentScene) {
       case 'intro':
-        return <IntroScene />;
+        return <IntroScene key={introRunId} />;
       case 'home':
         return <HomeScene />;
       case 'theme':

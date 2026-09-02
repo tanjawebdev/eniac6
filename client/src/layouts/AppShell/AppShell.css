@@ -14,6 +14,11 @@
   background: var(--bg-primary);
 }
 
+.app-shell.is-intro > .overlay-texture {
+  opacity: 0.08;
+  mix-blend-mode: soft-light;
+}
+
 /* Scaled dev mode settings */
 .scaled-mode .app-shell {
   border: 4px solid var(--border-panel);
