@@ -14,7 +14,6 @@ export function IntroScene() {
   const [pageHidden, setPageHidden] = useState(document.hidden);
   const elapsed = useRef(0);
   const step = INTRO_STEPS[stepIndex];
-  const isLast = stepIndex === INTRO_STEPS.length - 1;
   const isPlaying = !paused && !pageHidden;
 
   const moveTo = useCallback((index: number) => {
@@ -69,9 +68,8 @@ export function IntroScene() {
     <section className={`intro-scene ${!isPlaying ? 'intro-is-paused' : ''}`} aria-label="Introduction to the ENIAC Six">
       <div className="intro-layout">
         <header className="intro-header">
-          <span className="intro-brand"><span className="intro-brand-mark" aria-hidden="true">Ⅵ</span> THE ENIAC 6</span>
-          <span className="intro-header-label">A story. A machine. Your turn.</span>
-          <button className="intro-skip" onClick={goHome}>Skip intro <span aria-hidden="true">↗</span></button>
+          <span className="intro-brand">THE ENIAC 6</span>
+          <button className="intro-skip" onClick={goHome}>Press <strong>HOME</strong> to skip intro <span aria-hidden="true">↗</span></button>
         </header>
 
         <div className="intro-stage" aria-live={paused ? 'polite' : 'off'}>
@@ -85,7 +83,7 @@ export function IntroScene() {
               transition={{ duration: reducedMotion ? 0 : 0.45, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="intro-copy">
-                <p className="intro-eyebrow"><span aria-hidden="true" />{step.eyebrow}</p>
+                <p className="intro-eyebrow">{step.eyebrow}</p>
                 {step.id === 'title' ? (
                   <h1 className="intro-title"><span>THE</span>ENIAC <em>6</em></h1>
                 ) : <h2 className="intro-heading">{step.title}</h2>}
@@ -103,6 +101,7 @@ export function IntroScene() {
             <span>{step.label}</span>
             <span className="intro-play-status">{paused ? 'Paused' : 'Auto-playing'}</span>
           </div>
+
           <nav className="intro-timeline" aria-label="Introduction chapters">
             {INTRO_STEPS.map((item, index) => (
               <button key={item.id} className="intro-segment" aria-label={`Go to ${item.label}`} aria-current={index === stepIndex ? 'step' : undefined} onClick={() => moveTo(index)}>
@@ -110,12 +109,6 @@ export function IntroScene() {
               </button>
             ))}
           </nav>
-          <div className="intro-controls">
-            <button className="intro-control" disabled={stepIndex === 0} onClick={() => moveTo(stepIndex - 1)}><span aria-hidden="true">←</span> Back</button>
-            <button className="intro-control intro-pause" aria-pressed={paused} onClick={() => setPaused((value) => !value)}><span aria-hidden="true">{paused ? '▷' : 'Ⅱ'}</span> {paused ? 'Resume' : 'Pause'}</button>
-            <button className="intro-control intro-next" onClick={next}>{isLast ? 'Begin exploring' : 'Next'} <span aria-hidden="true">→</span></button>
-          </div>
-          <p className="intro-hardware-hint">Press <strong>INTRO</strong> to restart this guide <span>·</span> Press <strong>HOME</strong> to explore</p>
         </footer>
       </div>
     </section>

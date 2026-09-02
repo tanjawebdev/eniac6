@@ -16,7 +16,7 @@ function SixSignals() {
           <path className="intro-signal-path" d={`M${105 + i * 118} 28 V${100 + i * 22} C${105 + i * 118} ${230 + i * 13}, ${185 + i * 85} ${205 + i * 18}, ${185 + i * 85} 340 V390`} />
           <circle cx={105 + i * 118} cy="28" r="9" fill={person.color} />
           <circle className="intro-signal-end" cx={185 + i * 85} cy="390" r="6" fill={person.color} />
-          <text x={105 + i * 118} y="65" textAnchor="middle" className="intro-svg-micro">0{i + 1}</text>
+          <text x={105 + i * 118} y="10" textAnchor="middle" className="intro-svg-micro">0{i + 1}</text>
         </g>
       ))}
     </svg>
@@ -31,7 +31,7 @@ function Trajectory() {
         {[0, 1, 2].map((i) => <path key={i} className="intro-trajectory" style={indexedStyle(i)} d={`M55 360 Q${310 + i * 45} ${-185 + i * 100} ${610 + i * 65} 360`} />)}
         <circle cx="55" cy="360" r="7" fill="var(--intro-gold)" />
         <text x="70" y="63" className="intro-svg-label">TRAJECTORY CALCULATIONS</text>
-        <text x="540" y="403" className="intro-svg-micro">DISTANCE →</text>
+        <text x="665" y="380" className="intro-svg-micro">DISTANCE →</text>
         <g className="intro-calculation-sheet">
           <rect x="478" y="85" width="244" height="181" fill="#121310" stroke="#6c6b60" />
           <text x="498" y="119" className="intro-svg-label">FIRING TABLE</text>
@@ -41,7 +41,6 @@ function Trajectory() {
           <text x="502" y="232" className="intro-svg-micro">03</text><text x="576" y="232" className="intro-svg-micro">036</text><text x="649" y="232" className="intro-svg-micro">219</text>
         </g>
       </svg>
-      <figcaption>Mathematics, calculated by hand. <span>Illustrative diagram</span></figcaption>
     </figure>
   );
 }
@@ -52,7 +51,7 @@ function Women() {
       {PROGRAMMER_LIST.map((person, i) => (
         <figure className="intro-woman" key={person.key} style={indexedStyle(i, person.color)}>
           <div className="intro-portrait"><img src={person.portrait} alt="" /><span>0{i + 1}</span></div>
-          <figcaption><strong>{person.name.replace('\n', ' ')}</strong><span>{person.fullName}</span></figcaption>
+          <figcaption><strong>{person.name.replace('\n', ' ')}</strong><span>{person.born} - {person.died}</span></figcaption>
         </figure>
       ))}
     </div>
@@ -62,28 +61,13 @@ function Women() {
 function Machine() {
   return (
     <figure className="intro-figure intro-machine-figure">
-      <svg viewBox="0 0 800 410" fill="none" aria-hidden="true">
-        <path d="M20 348H785M60 375H740" className="intro-grid-line" />
-        {Array.from({ length: 10 }, (_, i) => (
-          <g key={i} className="intro-cabinet" style={indexedStyle(i)}>
-            <rect x={32 + i * 73} y="55" width="67" height="288" fill="#141511" stroke="#777467" />
-            <rect x={39 + i * 73} y="65" width="53" height="18" stroke="#56564d" />
-            {[0, 1, 2, 3, 4].map((row) => (
-              <g key={row}>
-                <path d={`M${40 + i * 73} ${96 + row * 42}h51`} stroke="#383b33" />
-                {[0, 1, 2, 3].map((col) => <circle key={col} className="intro-tube" style={indexedStyle(i + row + col)} cx={45 + i * 73 + col * 14} cy={111 + row * 42} r="3" />)}
-              </g>
-            ))}
-            <path d={`M${41 + i * 73} 311h49M${41 + i * 73} 320h49M${41 + i * 73} 329h49`} stroke="#505247" />
-          </g>
-        ))}
-        {[0, 1, 2, 3, 4, 5].map((i) => <path key={i} className="intro-patch-wire" style={indexedStyle(i)} d={`M${60 + i * 90} 282 C${65 + i * 90} ${340 + i * 5},${160 + i * 82} ${350 + i * 5},${175 + i * 82} 241`} />)}
-        <text x="32" y="30" className="intro-svg-micro">ENIAC / SCHEMATIC IMPRESSION</text>
-      </svg>
+      <div className="intro-machine-photo">
+        <img src="/eniac-room.jpg" alt="The ENIAC room-sized computer in 1946" />
+      </div>
       <div className="intro-machine-stats">
-        <div><strong>40</strong><span>panels</span></div>
-        <div><strong>≈18,000</strong><span>vacuum tubes</span></div>
-        <div><strong>1</strong><span>room-sized computer</span></div>
+        <div><strong>20</strong><span>Accumulators</span></div>
+        <div><strong>40</strong><span>Panels</span></div>
+        <div><strong>≈ 18,000</strong><span>Vacuum tubes</span></div>
       </div>
     </figure>
   );
@@ -96,7 +80,6 @@ function Recognition() {
       <div className="intro-recognition-names">
         {PROGRAMMER_LIST.map((person, i) => <span key={person.key} style={indexedStyle(i, person.color)}><i />{person.name.replace('\n', ' ')}</span>)}
       </div>
-      <p>Their words. Their work. Their place in history.</p>
     </div>
   );
 }
@@ -105,8 +88,7 @@ function InsertCard() {
   return (
     <svg viewBox="0 0 800 500" fill="none" aria-hidden="true">
       <defs><clipPath id="intro-card-slot-clip"><rect x="0" y="0" width="800" height="331" /></clipPath></defs>
-      <path d="M138 331L205 274H608L670 331V429H138Z" fill="#141511" stroke="#7e7a69" strokeWidth="2" />
-      <path d="M138 331H670M205 274V312M608 274V312" stroke="#55574b" />
+
       <rect x="249" y="316" width="287" height="16" rx="8" fill="#060706" stroke="#797561" />
       <g clipPath="url(#intro-card-slot-clip)">
         <g className="intro-inserting-card">
@@ -118,9 +100,7 @@ function InsertCard() {
         </g>
       </g>
       <path className="intro-insert-arrow" d="M582 150V235m-12-12 12 12 12-12" stroke="var(--intro-gold)" strokeWidth="3" />
-      <circle cx="187" cy="383" r="7" className="intro-slot-light" />
-      <text x="212" y="389" className="intro-svg-label">CARD SLOT</text>
-      <text x="253" y="476" className="intro-svg-micro">CHOOSE → INSERT → CONNECT</text>
+      <text x="342" y="369" className="intro-svg-label">CARD SLOT</text>
     </svg>
   );
 }
@@ -131,7 +111,7 @@ function ConnectCable() {
       <rect x="36" y="130" width="182" height="190" fill="#151610" stroke="#73715e" />
       <path d="M65 130V75H187V130" fill="#d7c995" stroke="#d7c995" />
       <text x="80" y="105" className="intro-card-ink">KAY</text>
-      <text x="67" y="185" className="intro-svg-label">HER CARD</text>
+      <text x="67" y="185" className="intro-svg-label">INSERT CARD</text>
       <circle cx="126" cy="248" r="17" stroke="var(--intro-gold)" strokeWidth="3" />
       <path className="intro-cable-shadow" d="M126 248C126 454 411 455 411 255S425 168 498 168" />
       <path className="intro-cable-connect" d="M126 248C126 454 411 455 411 255S425 168 498 168" />
@@ -165,7 +145,6 @@ function Controls() {
           <text x={128 + i * 180} y="431" textAnchor="middle" className="intro-svg-label">{label}</text>
         </g>
       ))}
-      <text x="400" y="467" textAnchor="middle" className="intro-svg-micro">EXAMPLE: THE PROGRAMMING CHAPTER</text>
     </svg>
   );
 }
