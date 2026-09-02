@@ -69,7 +69,7 @@ export const PROGRAMMER_UIDS = {
   snyder: ['049F88A18C2681', '04C15DA18C2681'],
   wescoff: ['04CF8DA18C2681', '045D53A18C2681'],
   bilas: ['04367FA18C2681', '045F64A18C2681'],
-  lichterman: ['047E93A18C2681', '04ED69A18C2681'],
+  lichterman: ['047E93A18C2681', '04D327A18C2681'],
 } as const;
 
 export type ProgrammerUid = (typeof PROGRAMMER_UIDS)[ProgrammerKey][number];

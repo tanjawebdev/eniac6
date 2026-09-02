@@ -36,7 +36,7 @@ async function main(): Promise<void> {
   } else {
     const { SerialService } = await import('./serial/SerialService.js');
     hardwareSource = new SerialService();
-    console.log(`[Main] Using SerialService (${config.serialPort}).`);
+    console.log(`[Main] Using SerialService — main: ${config.mainPort}, NFC: ${config.nfcPorts.join(', ')}.`);
   }
 
   // --- Hardware state manager ---
@@ -77,7 +77,10 @@ async function main(): Promise<void> {
   console.log(`║  HTTP:       http://localhost:${config.httpPort}        ║`);
   console.log(`║  WebSocket:  ws://localhost:${config.wsPort}          ║`);
   if (!config.mockMode) {
-    console.log(`║  Serial:     ${config.serialPort.padEnd(25)}  ║`);
+    console.log(`║  Main port:  ${config.mainPort.padEnd(25)}  ║`);
+    config.nfcPorts.forEach((port, i) => {
+      console.log(`║  NFC-${i + 1}:      ${port.padEnd(25)}  ║`);
+    });
   }
   console.log('╚══════════════════════════════════════════╝');
   console.log('');

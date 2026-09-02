@@ -1,15 +1,17 @@
 // ============================================
-// Serial Service — Real Arduino Communication
-// Opens a USB serial connection, reads newline-delimited CSV,
-// parses each line, and emits typed hardware events.
-// Auto-reconnects on disconnect with a 3-second backoff.
+// Serial Service — Main Arduino (COM3 / Mega)
+// Opens a USB serial connection to the main Arduino Mega,
+// reads newline-delimited CSV, parses each line, and emits
+// typed hardware events: POT, BUTTON, CABLE.
 //
-// Contact + NFC Coupling:
-//   The microswitch / contact sensor is the physical ground truth
-//   for card presence. When a card is inserted, PN532 reads the UID.
-//   Even if PN532 sends NFC REMOVED (due to RF drops), the card
-//   remains ACTIVE as long as the contact sensor is ACTIVE.
-//   Only when the contact sensor becomes INACTIVE is the card removed.
+// NFC and CONTACT events are NO LONGER handled here.
+// They are received from the 6 dedicated NFC Arduinos via
+// NfcSerialHandler instances (one per slot), whose events
+// are forwarded through this service's 'data' emitter so
+// the rest of the backend (HardwareStateManager, WebSocket)
+// has a single unified source.
+//
+// Auto-reconnects on disconnect with a 3-second backoff.
 //
 // Cable→Banana Resolution:
 //   Cable N inherits the programmer from NFC reader / slot N.
@@ -23,15 +25,15 @@
 import { EventEmitter } from 'events';
 import { config } from '../config.js';
 import { parseSerialLine } from './SerialParser.js';
+import { NfcSerialHandler } from './NfcSerialHandler.js';
 import type { IHardwareSource } from '../types/server.js';
 import type {
   BananaEvent,
   HardwareEvent,
   HardwareEventTiming,
-  NfcEvent,
 } from '../../../shared/events.js';
 import type { ThemeId, ProgrammerKey } from '../../../shared/constants.js';
-import { UID_TO_PROGRAMMER, CONTACT_COUNT } from '../../../shared/constants.js';
+import { UID_TO_PROGRAMMER } from '../../../shared/constants.js';
 
 /** Reconnect delay after port close or error (ms) */
 const RECONNECT_DELAY_MS = 3000;
@@ -44,12 +46,12 @@ const RECONNECT_DELAY_MS = 3000;
 const SOCKET_TO_THEME: readonly ThemeId[] = [
   'recognition',   // socket 0 (Arduino socket 1)
   'recognition',   // socket 1 (Arduino socket 2)
-  'teamwork',  // socket 2 (Arduino socket 3)
-  'teamwork',  // socket 3 (Arduino socket 4)
-  'programming',     // socket 4 (Arduino socket 5)
-  'programming',     // socket 5 (Arduino socket 6)
-  'pioneering',  // socket 6 (Arduino socket 7)
-  'pioneering',  // socket 7 (Arduino socket 8)
+  'teamwork',      // socket 2 (Arduino socket 3)
+  'teamwork',      // socket 3 (Arduino socket 4)
+  'programming',   // socket 4 (Arduino socket 5)
+  'programming',   // socket 5 (Arduino socket 6)
+  'pioneering',    // socket 6 (Arduino socket 7)
+  'pioneering',    // socket 7 (Arduino socket 8)
 ] as const;
 
 export class SerialService extends EventEmitter implements IHardwareSource {
@@ -57,19 +59,13 @@ export class SerialService extends EventEmitter implements IHardwareSource {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private stopped = false;
 
-  /**
-   * Current physical contact sensor states (0-based slot index -> active boolean).
-   */
-  private contactActive: boolean[] = new Array(CONTACT_COUNT).fill(false);
+  /** NFC Arduino handlers — one per slot (0–5). */
+  private nfcHandlers: NfcSerialHandler[] = [];
 
   /**
-   * Cached last known UID detected for each slot (0-based index -> UID string).
-   */
-  private slotUids = new Map<number, string>();
-
-  /**
-   * Tracks the active NFC UID on each reader (0-based index -> UID string).
+   * Tracks the active NFC UID on each reader (0-based index → UID string).
    * Used to resolve which programmer a cable carries when plugged in.
+   * Populated by events forwarded from the NFC Arduinos.
    */
   private nfcReaderUids = new Map<number, string>();
 
@@ -86,14 +82,15 @@ export class SerialService extends EventEmitter implements IHardwareSource {
   private lastLoggedPotValues = new Array(16).fill(-1);
   private lastPotLogTimes = new Array(16).fill(0);
 
-  /** Start the serial connection. */
+  /** Start the main serial connection and all NFC handlers. */
   start(): void {
     this.stopped = false;
-    console.log(`[Serial] Opening ${config.serialPort} at ${config.baudRate} baud…`);
+    console.log(`[Serial] Opening main Arduino on ${config.mainPort} at ${config.baudRate} baud…`);
     this.openPort();
+    this.startNfcHandlers();
   }
 
-  /** Stop the serial connection and cancel any pending reconnects. */
+  /** Stop everything and cancel any pending reconnects. */
   stop(): void {
     this.stopped = true;
     this.clearReconnect();
@@ -104,18 +101,98 @@ export class SerialService extends EventEmitter implements IHardwareSource {
       });
     }
     this.port = null;
+
+    for (const handler of this.nfcHandlers) {
+      handler.stop();
+    }
+    this.nfcHandlers = [];
+
     console.log('[Serial] Stopped.');
   }
 
+  // ============================================
+  // NFC Handlers
+  // ============================================
+
+  /** Instantiate and start one NfcSerialHandler per configured NFC port. */
+  private startNfcHandlers(): void {
+    config.nfcPorts.forEach((portPath, slotIndex) => {
+      const handler = new NfcSerialHandler(slotIndex, portPath);
+
+      // Forward all hardware events from NFC Arduinos through this service.
+      handler.on('data', (event: HardwareEvent, timing?: HardwareEventTiming) => {
+        this.processNfcHandlerEvent(event, timing ?? {});
+      });
+
+      handler.on('connected', () => {
+        console.log(`[Serial] NFC Arduino ${slotIndex + 1} (${portPath}) connected.`);
+      });
+
+      handler.on('disconnected', () => {
+        console.log(`[Serial] NFC Arduino ${slotIndex + 1} (${portPath}) disconnected.`);
+      });
+
+      handler.on('error', (err: Error) => {
+        console.error(`[Serial] NFC Arduino ${slotIndex + 1} (${portPath}) error:`, err.message);
+      });
+
+      handler.start();
+      this.nfcHandlers.push(handler);
+    });
+  }
+
   /**
-   * Dynamically import 'serialport' and open the configured port.
+   * Handle events from NFC Arduinos. Applies NFC UID tracking for
+   * banana-plug resolution, then re-emits to the state manager.
    */
+  private processNfcHandlerEvent(event: HardwareEvent, timing: HardwareEventTiming): void {
+    switch (event.type) {
+      case 'nfc': {
+        if (event.present) {
+          this.nfcReaderUids.set(event.reader, event.uid);
+
+          // If the cable for this slot is already in a socket, update banana state.
+          const socket = this.cableToSocket.get(event.reader);
+          if (socket !== undefined) {
+            this.emitBananaEvent(event.reader, socket, true, timing);
+          }
+        } else {
+          this.nfcReaderUids.delete(event.reader);
+
+          const socket = this.cableToSocket.get(event.reader);
+          if (socket !== undefined) {
+            this.emitBananaEvent(event.reader, socket, true, timing);
+          }
+        }
+        // Always forward the raw NFC event to the state manager.
+        this.emit('data', event, timing);
+        break;
+      }
+
+      case 'contact': {
+        // Forward raw contact event; NFC Arduino handles the coupled NFC logic.
+        this.emit('data', event, timing);
+        break;
+      }
+
+      default:
+        // Unexpected event type from an NFC Arduino — forward anyway.
+        this.emit('data', event, timing);
+        break;
+    }
+  }
+
+  // ============================================
+  // Main Arduino serial port
+  // ============================================
+
+  /** Dynamically import 'serialport' and open the main Arduino port. */
   private async openPort(): Promise<void> {
     try {
       const { SerialPort } = await import('serialport');
 
       this.port = new SerialPort({
-        path: config.serialPort,
+        path: config.mainPort,
         baudRate: config.baudRate,
         autoOpen: false,
         // Keep Windows/USB reads small without creating one callback per byte.
@@ -125,12 +202,10 @@ export class SerialService extends EventEmitter implements IHardwareSource {
       // --- Event handlers ---
 
       this.port.on('open', () => {
-        console.log('[Serial] Port opened.');
+        console.log('[Serial] Main port opened.');
         this.lineBuffer = '';
 
-        // Pulse DTR so a fast backend reload also resets the Arduino. Without
-        // an edge, the new state manager starts empty while the still-running
-        // sketch only emits future changes.
+        // Pulse DTR so a fast backend reload also resets the Arduino.
         const openedPort = this.port;
         openedPort?.set({ dtr: false, rts: false }, (resetErr) => {
           if (resetErr) {
@@ -151,18 +226,18 @@ export class SerialService extends EventEmitter implements IHardwareSource {
       });
 
       this.port.on('close', () => {
-        console.log('[Serial] Port closed.');
+        console.log('[Serial] Main port closed.');
         this.emit('disconnected');
         this.scheduleReconnect();
       });
 
       this.port.on('error', (err: Error) => {
-        console.error('[Serial] Port error:', err.message);
+        console.error('[Serial] Main port error:', err.message);
         this.emit('error', err);
         this.scheduleReconnect();
       });
 
-      // Timestamp each low-latency chunk, then split complete lines for diagnostics.
+      // Timestamp each low-latency chunk, then split complete lines.
       this.port.on('data', (chunk: Buffer) => {
         const serialReceivedAt = Date.now();
         this.lineBuffer += chunk.toString('utf-8');
@@ -174,10 +249,9 @@ export class SerialService extends EventEmitter implements IHardwareSource {
         }
       });
 
-      // Open the port
       this.port.open((err) => {
         if (err) {
-          console.error('[Serial] Failed to open port:', err.message);
+          console.error('[Serial] Failed to open main port:', err.message);
           this.emit('error', err);
           this.scheduleReconnect();
         }
@@ -206,7 +280,7 @@ export class SerialService extends EventEmitter implements IHardwareSource {
 
     switch (result.kind) {
       case 'event':
-        this.processHardwareEvent(result.event, timing);
+        this.processMainEvent(result.event, timing);
         break;
 
       case 'cable':
@@ -227,86 +301,13 @@ export class SerialService extends EventEmitter implements IHardwareSource {
   }
 
   /**
-   * Handle incoming HardwareEvent with coupled Contact/NFC logic
-   * and clean non-blocking console logging.
+   * Process hardware events from the main Arduino.
+   * Only POT and BUTTON events are expected here;
+   * NFC and CONTACT come from the NFC Arduinos.
    */
-  private processHardwareEvent(event: HardwareEvent, timing: HardwareEventTiming): void {
+  private processMainEvent(event: HardwareEvent, timing: HardwareEventTiming): void {
     switch (event.type) {
-      case 'contact': {
-        const slot = event.id;
-        this.contactActive[slot] = event.active;
-        const time = new Date().toISOString().slice(11, 23);
-        console.log(`[${time}] [Serial] Contact ${slot + 1}: ${event.active ? 'ACTIVE' : 'INACTIVE'}`);
-
-        // Emit contact event
-        this.emit('data', event, timing);
-
-        if (event.active) {
-          // Contact activated: if we have a known UID for this slot, make sure NFC is present
-          const cachedUid = this.slotUids.get(slot);
-          if (cachedUid) {
-            this.nfcReaderUids.set(slot, cachedUid);
-            const nfcEv: NfcEvent = { type: 'nfc', reader: slot, present: true, uid: cachedUid };
-            const prog = UID_TO_PROGRAMMER[cachedUid] ?? 'unknown';
-            console.log(`[${time}] [Serial] NFC Slot ${slot + 1} ACTIVE -> Programmer: ${prog} (${cachedUid})`);
-            this.emit('data', nfcEv, timing);
-
-            // If cable for this slot is in a socket, update the banana event
-            const socket = this.cableToSocket.get(slot);
-            if (socket !== undefined) {
-              this.emitBananaEvent(slot, socket, true, timing);
-            }
-          }
-        } else {
-          // Contact deactivated: physically removed from slot!
-          this.nfcReaderUids.delete(slot);
-          const nfcEv: NfcEvent = { type: 'nfc', reader: slot, present: false, uid: '' };
-          console.log(`[Serial] NFC Slot ${slot + 1} REMOVED (Contact opened)`);
-          this.emit('data', nfcEv, timing);
-
-          // If cable for this slot is in a socket, clear programmer from banana plug
-          const socket = this.cableToSocket.get(slot);
-          if (socket !== undefined) {
-            this.emitBananaEvent(slot, socket, true, timing);
-          }
-        }
-        break;
-      }
-
-      case 'nfc': {
-        const slot = event.reader;
-        if (event.present) {
-          // Store UID for this slot
-          this.slotUids.set(slot, event.uid);
-          this.nfcReaderUids.set(slot, event.uid);
-
-          const prog = UID_TO_PROGRAMMER[event.uid] ?? 'unknown';
-          console.log(`[Serial] NFC Reader ${slot + 1} SCANNED -> UID: ${event.uid} (${prog})`);
-
-          // Emit NFC present event
-          this.emit('data', event, timing);
-
-          // If cable for this slot is currently in a socket, update the banana plug
-          const socket = this.cableToSocket.get(slot);
-          if (socket !== undefined) {
-            this.emitBananaEvent(slot, socket, true, timing);
-          }
-        } else {
-          // PN532 lost card RF sync. Check if the physical microswitch is still closed.
-          if (this.contactActive[slot]) {
-            // IGNORE removal: card is still physically seated in the slot!
-            // Do not emit removal event.
-          } else {
-            // Contact is also inactive -> emit removal
-            this.nfcReaderUids.delete(slot);
-            this.emit('data', event, timing);
-          }
-        }
-        break;
-      }
-
       case 'pot': {
-        // Always emit POT event to state/WebSocket for real-time responsiveness
         this.emit('data', event, timing);
 
         // Responsive per-pot console logging
@@ -333,6 +334,8 @@ export class SerialService extends EventEmitter implements IHardwareSource {
       }
 
       default:
+        // NFC and CONTACT events from the main port are unexpected but
+        // forwarded anyway to avoid silently dropping data.
         this.emit('data', event, timing);
         break;
     }
@@ -389,7 +392,7 @@ export class SerialService extends EventEmitter implements IHardwareSource {
 
     const socket = (socketId % 2) as 0 | 1;
 
-    // Resolve programmer: cable N ↔ NFC slot N
+    // Resolve programmer: cable N ↔ NFC slot N (UID stored by NFC handler events)
     let programmer: ProgrammerKey | null = null;
     if (connected) {
       const uid = this.nfcReaderUids.get(cableId);
@@ -407,22 +410,21 @@ export class SerialService extends EventEmitter implements IHardwareSource {
     };
 
     console.log(
-      `[Serial] Banana Event: Cable ${cableId + 1} -> Socket ${socketId + 1} (${theme} [${socket}]) | Connected: ${connected} | Programmer: ${programmer ?? 'none'}`
+      `[Serial] Banana Event: Cable ${cableId + 1} → Socket ${socketId + 1} (${theme} [${socket}]) | Connected: ${connected} | Programmer: ${programmer ?? 'none'}`
     );
 
     this.emit('data', event, timing);
   }
 
   // ============================================
-  // Reconnection
+  // Reconnection (main port only)
   // ============================================
 
-  /** Schedule a reconnect attempt after a delay. */
   private scheduleReconnect(): void {
     if (this.stopped) return;
     this.clearReconnect();
 
-    console.log(`[Serial] Reconnecting in ${RECONNECT_DELAY_MS / 1000}s…`);
+    console.log(`[Serial] Reconnecting main port in ${RECONNECT_DELAY_MS / 1000}s…`);
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       if (!this.stopped) {
@@ -431,7 +433,6 @@ export class SerialService extends EventEmitter implements IHardwareSource {
     }, RECONNECT_DELAY_MS);
   }
 
-  /** Clear any pending reconnect timer. */
   private clearReconnect(): void {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
