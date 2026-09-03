@@ -17,6 +17,7 @@ export function AppShell() {
   const currentScene = useAppStore((state) => state.currentScene);
   const selectedTheme = useAppStore((state) => state.selectedTheme);
   const selectedProgKey = useAppStore((state) => state.selectedProgrammer);
+  const setCardsVisible = useAppStore((state) => state.setCardsVisible);
   const nfcStates = useHardwareStore((state) => state.nfc);
 
   const allInserted =
@@ -24,6 +25,15 @@ export function AppShell() {
     nfcStates.every((n) => n.present && n.uid);
 
   const [scale, setScale] = useState(1);
+
+  // When the scene changes to 'home', wait for the SceneManager fade transition
+  // (0.6s) plus a settle buffer (500ms), then reveal the programmer cards.
+  // Any scene departure resets cardsVisible=false via the store actions.
+  useEffect(() => {
+    if (currentScene !== 'home') return;
+    const timer = window.setTimeout(() => setCardsVisible(true), 1100);
+    return () => window.clearTimeout(timer);
+  }, [currentScene, setCardsVisible]);
 
   // Dynamic scale calculation to fit portrait 4K screen (2160x3840) on developer screens
   useEffect(() => {

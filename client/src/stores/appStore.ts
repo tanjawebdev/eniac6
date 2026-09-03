@@ -9,6 +9,13 @@ interface AppStoreState {
   selectedProgrammer: ProgrammerKey | null;
   selectedTheme: ThemeId | null;
   transitionState: 'idle' | 'entering' | 'exiting';
+  /**
+   * Controls whether the ProgrammerCardsOverlay cards are visible.
+   * Set to false immediately when leaving/entering home so cards don't
+   * appear during the SceneManager transition animation. AppShell fires
+   * a delayed setCardsVisible(true) after the scene transition settles.
+   */
+  cardsVisible: boolean;
   debugVisible: boolean;
   devScale: boolean;
   activeColor: string; // Dynamic accent color, defaults to general amber/gold or active woman color
@@ -30,6 +37,7 @@ interface AppStoreState {
   setTransitionState: (state: 'idle' | 'entering' | 'exiting') => void;
   setWsConnected: (connected: boolean) => void;
   setMockMode: (mock: boolean) => void;
+  setCardsVisible: (visible: boolean) => void;
 }
 
 export const DEFAULT_ACTIVE_COLOR = '#ffffff';
@@ -41,6 +49,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
   selectedProgrammer: null,
   selectedTheme: null,
   transitionState: 'idle',
+  cardsVisible: false,
   debugVisible: false,
   devScale: false,
   activeColor: DEFAULT_ACTIVE_COLOR,
@@ -56,9 +65,13 @@ export const useAppStore = create<AppStoreState>((set) => ({
   goToScene: (scene) =>
     set((state) => {
       if (state.currentScene === scene) return {};
+      // When going home→theme the cards must stay visible (no hide/reveal flash).
+      // Only reset cardsVisible when actually leaving the card-overlay flow entirely.
+      const keepCards = scene === 'theme';
       return {
         previousScene: state.currentScene,
         currentScene: scene,
+        cardsVisible: keepCards ? state.cardsVisible : false,
       };
     }),
 
@@ -68,6 +81,10 @@ export const useAppStore = create<AppStoreState>((set) => ({
       currentScene: 'home',
       selectedTheme: null,
       activeColor: DEFAULT_ACTIVE_COLOR,
+      // Preserve cardsVisible when coming from theme so cards stay in place during
+      // the theme→home slide-down transition. Only reset it when coming from elsewhere
+      // (e.g. intro, reset) so the staggered entrance still plays on a fresh load.
+      cardsVisible: state.currentScene === 'theme' ? state.cardsVisible : false,
     })),
 
   showIntro: () =>
@@ -78,6 +95,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
       selectedProgrammer: null,
       selectedTheme: null,
       activeColor: DEFAULT_ACTIVE_COLOR,
+      cardsVisible: false,
     })),
 
   selectProgrammer: (programmerKey) =>
@@ -103,6 +121,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
       selectedProgrammer: null,
       selectedTheme: null,
       activeColor: DEFAULT_ACTIVE_COLOR,
+      cardsVisible: false,
       themeColors: {
         pioneering: '#333333',
         programming: '#333333',
@@ -131,4 +150,5 @@ export const useAppStore = create<AppStoreState>((set) => ({
   setTransitionState: (transitionState) => set(() => ({ transitionState })),
   setWsConnected: (connected) => set(() => ({ wsConnected: connected })),
   setMockMode: (mock) => set(() => ({ mockMode: mock })),
+  setCardsVisible: (visible) => set(() => ({ cardsVisible: visible })),
 }));

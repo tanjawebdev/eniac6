@@ -26,6 +26,59 @@
   animation: pulse-white 2s ease-in-out infinite;
 }
 
+/* ── Card entrance animation (home scene) ──────────────────────── */
+
+/* Default hidden state — cards start invisible and slightly below */
+.overlay-programmer-card.cards-hidden {
+  opacity: 0;
+  pointer-events: none;
+  /* Keep transform in sync with the card's base transform */
+  transform: translate(-50%, calc(-50% + 32px));
+  /* No animation while hidden — pauses the pulse-white loop too */
+  animation: none;
+}
+
+/* Revealed state — play the enter keyframe then hold, staggered per card */
+.overlay-programmer-card.cards-enter {
+  animation:
+    card-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--card-stagger-delay, 0ms) both,
+    pulse-white 2s ease-in-out var(--card-stagger-delay, 0ms) infinite;
+}
+
+/* Inserted cards get the accent pulse after they've entered */
+.overlay-programmer-card.cards-enter.inserted {
+  animation:
+    card-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--card-stagger-delay, 0ms) both,
+    pulse-accent-color 2s ease-in-out var(--card-stagger-delay, 0ms) infinite;
+}
+
+/* ── Stable resting state (post-entrance) ───────────────────────── */
+/* Once the stagger entrance is done, cards graduate to this class.  */
+/* It contains NO card-enter keyframe, so changing the pulse type    */
+/* (home↔theme) cannot accidentally restart the entrance animation.  */
+.overlay-programmer-card.cards-visible {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+  animation: pulse-white 2s ease-in-out infinite;
+}
+
+.overlay-programmer-card.cards-visible.inserted {
+  animation: pulse-accent-color 2s ease-in-out infinite;
+}
+
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 32px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+
 /* Hide the selected programmer's card when the quote block is visible */
 .overlay-programmer-card.hidden-by-quote {
   opacity: 0;
