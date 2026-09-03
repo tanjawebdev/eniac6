@@ -34,6 +34,13 @@ export class AnimationEngine {
   private blurCanvas: HTMLCanvasElement | null = null;
   private blurCtx: CanvasRenderingContext2D | null = null;
 
+  // Dedicated layer for the liquid-wave background (uses CSS blur instead of ctx.filter)
+  private waveCanvas: HTMLCanvasElement | null = null;
+  private waveCtx: CanvasRenderingContext2D | null = null;
+
+  // Cached gradient objects for liquid waves (recreated only on resize)
+  private waveGradients: CanvasGradient[] | null = null;
+
   // Theme-specific delegate animators
   private animators: Record<string, ThemeAnimator> = {
     programming: new ProgrammingAnimator(),
@@ -81,6 +88,21 @@ export class AnimationEngine {
     this.canvas.parentNode?.insertBefore(this.blurCanvas, this.canvas.nextSibling);
     this.blurCtx = this.blurCanvas.getContext('2d');
 
+    // Create dedicated wave canvas — blurred via CSS (GPU compositor), NOT ctx.filter
+    this.waveCanvas = document.createElement('canvas');
+    this.waveCanvas.className = 'canvas-liquid-wave-layer';
+    this.waveCanvas.style.position = 'absolute';
+    this.waveCanvas.style.inset = '0';
+    this.waveCanvas.style.width = '100%';
+    this.waveCanvas.style.height = '100%';
+    this.waveCanvas.style.pointerEvents = 'none';
+    this.waveCanvas.style.zIndex = '0';
+    // CSS blur is GPU-composited — essentially free vs ctx.filter which is software-rendered
+    this.waveCanvas.style.filter = 'blur(500px)';
+    this.waveCanvas.style.display = 'none';
+    this.canvas.parentNode?.insertBefore(this.waveCanvas, this.canvas.nextSibling);
+    this.waveCtx = this.waveCanvas.getContext('2d');
+
     // Handle resizing
     this.resize();
     window.addEventListener('resize', this.handleResize);
@@ -115,6 +137,17 @@ export class AnimationEngine {
         this.blurCtx.scale(dpr, dpr);
       }
     }
+
+    if (this.waveCanvas) {
+      // Wave canvas is drawn at half resolution — the blur hides any detail loss,
+      // so we save ~75% of fill pixels compared to full DPR resolution.
+      this.waveCanvas.width = Math.round(rect.width * 0.5);
+      this.waveCanvas.height = Math.round(rect.height * 0.5);
+      // No ctx.scale needed — we use a fixed coordinate space in drawLiquidWaves
+    }
+
+    // Invalidate cached gradients on resize so they are rebuilt at new dimensions
+    this.waveGradients = null;
   }
 
   public setConfig(key: keyof EngineConfig, value: any): void {
@@ -156,6 +189,76 @@ export class AnimationEngine {
     this.noisePattern = this.ctx.createPattern(nCanvas, 'repeat');
   }
 
+  // Static layer definitions — outside the frame loop to avoid per-frame allocation
+  private static readonly WAVE_LAYERS = [
+    {
+      // Deep Purple / Indigo base ribbon
+      pos: 0.15, wFactor: 0.55,
+      colors: ['rgba(55, 20, 90, 0.85)', 'rgba(20, 8, 45, 0.3)'] as [string, string],
+      a1: 0.2, f1: 0.003, s1: 0.5,
+      a2: 0.12, f2: 0.007, s2: -0.8,
+      a3: 0.07, f3: 0.012, s3: 1.1,
+      phase: 0
+    },
+    {
+      // Main Fiery Orange liquid fold
+      pos: 0.42, wFactor: 0.5,
+      colors: ['rgba(245, 65, 5, 0.95)', 'rgba(175, 20, 30, 0.4)'] as [string, string],
+      a1: 0.24, f1: 0.0024, s1: 0.7,
+      a2: 0.16, f2: 0.0055, s2: -0.6,
+      a3: 0.09, f3: 0.01, s3: 0.9,
+      phase: 1.2
+    },
+    {
+      // Warm Amber / Gold liquid wave accent
+      pos: 0.32, wFactor: 0.35,
+      colors: ['rgba(238, 135, 38, 1)', 'rgba(202, 100, 16, 0.92)'] as [string, string],
+      a1: 0.18, f1: 0.0032, s1: 0.9,
+      a2: 0.11, f2: 0.0075, s2: -1.1,
+      a3: 0.06, f3: 0.014, s3: 0.7,
+      phase: 2.8
+    },
+    {
+      // Deep Crimson / Violet fold
+      pos: 0.68, wFactor: 0.52,
+      colors: ['rgba(165, 15, 15, 0.85)', 'rgba(50, 10, 50, 0.35)'] as [string, string],
+      a1: 0.22, f1: 0.0026, s1: -0.5,
+      a2: 0.14, f2: 0.006, s2: 0.8,
+      a3: 0.08, f3: 0.011, s3: -1.0,
+      phase: 4.1
+    },
+    {
+      // Secondary Blue/Purple stream
+      pos: 0.58, wFactor: 0.42,
+      colors: ['rgba(50, 30, 134, 0.9)', 'rgba(76, 22, 112, 0.3)'] as [string, string],
+      a1: 0.19, f1: 0.0028, s1: 0.8,
+      a2: 0.13, f2: 0.0065, s2: -0.7,
+      a3: 0.07, f3: 0.012, s3: 1.2,
+      phase: 5.3
+    },
+    {
+      // Soft Plum / Blue accent edge wave
+      pos: 0.85, wFactor: 0.45,
+      colors: ['rgba(75, 30, 125, 0.75)', 'rgba(15, 10, 40, 0.2)'] as [string, string],
+      a1: 0.16, f1: 0.0035, s1: 0.6,
+      a2: 0.1, f2: 0.008, s2: -0.9,
+      a3: 0.05, f3: 0.015, s3: 0.8,
+      phase: 3.5
+    }
+  ];
+
+  /**
+   * Draws the liquid wave background.
+   *
+   * Performance design:
+   * - The ctx passed in is `waveCtx` (a half-resolution offscreen DOM canvas).
+   * - CSS `filter: blur(60px)` on that canvas element handles blurring via the
+   *   GPU compositor — this replaces the original `ctx.filter = 'blur(500px)'`
+   *   which was a full-resolution software blur computed every frame on the CPU.
+   * - Gradient objects are cached in `this.waveGradients` and only recreated on resize.
+   * - The wave canvas is drawn at 0.5× resolution; blur hides any detail loss.
+   * - stepY = 16 (was 12) — still visually identical after blur, saves ~25% path ops.
+   */
   private drawLiquidWaves(ctx: CanvasRenderingContext2D, width: number, height: number, timeVal: number): void {
     const t = timeVal * 0.0009;
 
@@ -164,97 +267,53 @@ export class AnimationEngine {
     ctx.fillRect(0, 0, width, height);
 
     ctx.save();
-    ctx.filter = 'blur(500px)';
+    // NO ctx.filter here — blur is applied via CSS on the waveCanvas DOM element
     ctx.globalCompositeOperation = 'screen';
 
-    // Rotate center pivot slightly for diagonal wave flow matching reference image
+    // Rotate center pivot slightly for diagonal wave flow
     const centerX = width / 2;
     const centerY = height / 2;
-
     ctx.translate(centerX, centerY);
     ctx.rotate(-0.35); // ~20 degree tilt
     ctx.translate(-centerX, -centerY);
 
-    const layers = [
-      {
-        // Deep Purple / Indigo base ribbon
-        pos: 0.15,
-        w: width * 0.55,
-        colors: ['rgba(55, 20, 90, 0.85)', 'rgba(20, 8, 45, 0.3)'],
-        amp1: width * 0.2, freq1: 0.003, speed1: 0.5,
-        amp2: width * 0.12, freq2: 0.007, speed2: -0.8,
-        amp3: width * 0.07, freq3: 0.012, speed3: 1.1,
-        phase: 0
-      },
-      {
-        // Main Fiery Orange liquid fold (Focal wave matching reference image)
-        pos: 0.42,
-        w: width * 0.5,
-        colors: ['rgba(245, 65, 5, 0.95)', 'rgba(175, 20, 30, 0.4)'],
-        amp1: width * 0.24, freq1: 0.0024, speed1: 0.7,
-        amp2: width * 0.16, freq2: 0.0055, speed2: -0.6,
-        amp3: width * 0.09, freq3: 0.01, speed3: 0.9,
-        phase: 1.2
-      },
-      {
-        // Warm Amber / Gold liquid wave accent
-        pos: 0.32,
-        w: width * 0.35,
-        colors: ['rgba(238, 135, 38, 1)', 'rgba(202, 100, 16, 0.92)'],
-        amp1: width * 0.18, freq1: 0.0032, speed1: 0.9,
-        amp2: width * 0.11, freq2: 0.0075, speed2: -1.1,
-        amp3: width * 0.06, freq3: 0.014, speed3: 0.7,
-        phase: 2.8
-      },
-      {
-        // Deep Crimson / Violet fold
-        pos: 0.68,
-        w: width * 0.52,
-        colors: ['rgba(165, 15, 15, 0.85)', 'rgba(50, 10, 50, 0.35)'],
-        amp1: width * 0.22, freq1: 0.0026, speed1: -0.5,
-        amp2: width * 0.14, freq2: 0.006, speed2: 0.8,
-        amp3: width * 0.08, freq3: 0.011, speed3: -1.0,
-        phase: 4.1
-      },
-      {
-        // Secondary Orange stream (Lower wave in reference image)
-        pos: 0.58,
-        w: width * 0.42,
-        colors: ['rgba(50, 30, 134, 0.9)', 'rgba(76, 22, 112, 0.3)'],
-        amp1: width * 0.19, freq1: 0.0028, speed1: 0.8,
-        amp2: width * 0.13, freq2: 0.0065, speed2: -0.7,
-        amp3: width * 0.07, freq3: 0.012, speed3: 1.2,
-        phase: 5.3
-      },
-      {
-        // Soft Plum / Blue accent edge wave
-        pos: 0.85,
-        w: width * 0.45,
-        colors: ['rgba(75, 30, 125, 0.75)', 'rgba(15, 10, 40, 0.2)'],
-        amp1: width * 0.16, freq1: 0.0035, speed1: 0.6,
-        amp2: width * 0.1, freq2: 0.008, speed2: -0.9,
-        amp3: width * 0.05, freq3: 0.015, speed3: 0.8,
-        phase: 3.5
-      }
-    ];
+    // Build gradient cache once per resize
+    if (!this.waveGradients) {
+      this.waveGradients = AnimationEngine.WAVE_LAYERS.map((layer) => {
+        const baseCenterX = width * layer.pos;
+        const w = width * layer.wFactor;
+        const startY = -height * 0.4;
+        const endY = height * 1.4;
+        const grad = ctx.createLinearGradient(baseCenterX - w / 2, startY, baseCenterX + w / 2, endY);
+        grad.addColorStop(0, layer.colors[0]);
+        grad.addColorStop(1, layer.colors[1]);
+        return grad;
+      });
+    }
 
-    const stepY = 12;
+    const stepY = 16; // Increased from 12 — imperceptible under blur, saves ~25% path ops
     const startY = -height * 0.4;
     const endY = height * 1.4;
 
-    for (const layer of layers) {
+    const layers = AnimationEngine.WAVE_LAYERS;
+    for (let i = 0; i < layers.length; i++) {
+      const layer = layers[i];
       const baseCenterX = width * layer.pos;
+      const w = width * layer.wFactor;
+      const amp1 = width * layer.a1;
+      const amp2 = width * layer.a2;
+      const amp3 = width * layer.a3;
 
       ctx.beginPath();
 
       // Left edge contour
       for (let y = startY; y <= endY; y += stepY) {
         const shift =
-          Math.sin(y * layer.freq1 + t * layer.speed1 + layer.phase) * layer.amp1 +
-          Math.cos(y * layer.freq2 + t * layer.speed2 + layer.phase * 1.4) * layer.amp2 +
-          Math.sin(y * layer.freq3 + t * layer.speed3) * layer.amp3;
+          Math.sin(y * layer.f1 + t * layer.s1 + layer.phase) * amp1 +
+          Math.cos(y * layer.f2 + t * layer.s2 + layer.phase * 1.4) * amp2 +
+          Math.sin(y * layer.f3 + t * layer.s3) * amp3;
 
-        const x = baseCenterX + shift - layer.w / 2;
+        const x = baseCenterX + shift - w / 2;
         if (y === startY) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
@@ -262,21 +321,16 @@ export class AnimationEngine {
       // Right edge contour (returning back up)
       for (let y = endY; y >= startY; y -= stepY) {
         const shift =
-          Math.sin(y * layer.freq1 + t * layer.speed1 + layer.phase + 0.35) * (layer.amp1 * 1.08) +
-          Math.cos(y * layer.freq2 + t * layer.speed2 + layer.phase * 1.4 + 0.45) * (layer.amp2 * 0.92) +
-          Math.sin(y * layer.freq3 + t * layer.speed3 + 0.7) * layer.amp3;
+          Math.sin(y * layer.f1 + t * layer.s1 + layer.phase + 0.35) * (amp1 * 1.08) +
+          Math.cos(y * layer.f2 + t * layer.s2 + layer.phase * 1.4 + 0.45) * (amp2 * 0.92) +
+          Math.sin(y * layer.f3 + t * layer.s3 + 0.7) * amp3;
 
-        const x = baseCenterX + shift + layer.w / 2;
+        const x = baseCenterX + shift + w / 2;
         ctx.lineTo(x, y);
       }
 
       ctx.closePath();
-
-      const grad = ctx.createLinearGradient(baseCenterX - layer.w / 2, startY, baseCenterX + layer.w / 2, endY);
-      grad.addColorStop(0, layer.colors[0]);
-      grad.addColorStop(1, layer.colors[1]);
-
-      ctx.fillStyle = grad;
+      ctx.fillStyle = this.waveGradients[i];
       ctx.fill();
     }
 
@@ -335,8 +389,22 @@ export class AnimationEngine {
 
     if (config.allInserted) {
       const timeVal = timestamp || performance.now();
-      this.drawLiquidWaves(ctx, width, height, timeVal);
+
+      // Show the wave layer canvas and draw into it at its own (half-res) dimensions
+      if (this.waveCanvas && this.waveCtx) {
+        this.waveCanvas.style.display = 'block';
+        const ww = this.waveCanvas.width;
+        const wh = this.waveCanvas.height;
+        this.drawLiquidWaves(this.waveCtx, ww, wh, timeVal);
+      }
+
+      // The main canvas stays clear (transparent) so the wave layer shows through
       return;
+    }
+
+    // Hide wave layer when not in allInserted state
+    if (this.waveCanvas) {
+      this.waveCanvas.style.display = 'none';
     }
 
     // Default: Fill background color & draw particles
@@ -364,6 +432,9 @@ export class AnimationEngine {
     window.removeEventListener('resize', this.handleResize);
     if (this.blurCanvas && this.blurCanvas.parentNode) {
       this.blurCanvas.parentNode.removeChild(this.blurCanvas);
+    }
+    if (this.waveCanvas && this.waveCanvas.parentNode) {
+      this.waveCanvas.parentNode.removeChild(this.waveCanvas);
     }
   }
 }

@@ -7,3 +7,7 @@
   z-index: 1;
   background: var(--bg-primary, #0a0a0a);
 }
+
+.all-inserted.theme-none .canvas-background {
+  background: none;
+}
