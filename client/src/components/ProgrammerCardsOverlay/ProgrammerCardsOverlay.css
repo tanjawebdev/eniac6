@@ -15,7 +15,7 @@
   justify-content: center;
   border: 3px solid var(--active-color);
   color: var(--active-color);
-  background: var(--active-color-dark);
+  background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 8px;
