@@ -24,12 +24,12 @@ export const config = {
    * (ignored in mock mode)
    */
   nfcPorts: [
-    'COM4',  // NFC Arduino 1 — slot 0
-    'COM10', // NFC Arduino 2 — slot 1
-    'COM12',  // NFC Arduino 3 — slot 2
-    'COM9',  // NFC Arduino 4 — slot 3
-    //'COM8',  // NFC Arduino 5 — slot 4
-    'COM13',  // NFC Arduino 6 — slot 5
+    'COM13',  // 
+    'COM9',  // stimmt
+    'COM8', // 
+    'COM10', // stimmt
+    'COM12',  // stimmt
+    'COM4',  // 
   ],
 
   /** Baud rate for all serial connections */

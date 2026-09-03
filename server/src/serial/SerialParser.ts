@@ -142,8 +142,8 @@ function parseNfc(parts: string[]): ParseResult {
   }
 
   if (action === 'REMOVED') {
-    const event: NfcEvent = { type: 'nfc', reader, present: false, uid: '' };
-    return { kind: 'event', event };
+    // Silently ignore NFC REMOVED lines; card presence is governed by contact switches
+    return { kind: 'ignored' };
   }
 
   return null;
