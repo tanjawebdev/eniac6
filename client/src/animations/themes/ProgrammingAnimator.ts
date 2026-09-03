@@ -20,8 +20,8 @@ export class ProgrammingAnimator implements ThemeAnimator {
     ctx.fillRect(0, 0, width, height);
 
     // Read potentiometer configurations
-    const scaleVal = config.pot0 / 1023; // SCALE (font/grid size)
-    const speedVal = config.pot1 / 1023; // SPEED (video playback rate)
+    const scaleVal = config.pot1 / 1023; // SCALE (font/grid size)
+    const speedVal = config.pot0 / 1023; // SPEED (video playback rate)
     const contrastVal = config.pot2 / 1023; // CONTRAST (of video footage)
     const gammaVal = config.pot3 / 1023; // GAMMA (mid-tone brightness of video footage)
 

@@ -39,10 +39,10 @@ export class PioneeringAnimator implements ThemeAnimator {
     ctx.fillRect(0, 0, width, height);
 
     // Sized with a cleaner minimum spacing (min 8 -> gap min 16px) for distinct halftone dots
-    const rasterSize = Math.max(8, Math.round(5 + (config.pot0 / 1023) * 14));
-    const speedVal = 0.5 + (config.pot1 / 1023) * 4;
-    const dotSize = Math.max(4, Math.round(1.5 + (config.pot2 / 1023) * rasterSize * 1.8));
-    const numWalkers = Math.min(6, Math.max(1, Math.floor((config.pot3 / 1023) * 6) + 1));
+    const rasterSize = Math.max(8, Math.round(5 + (config.pot1 / 1023) * 14));
+    const speedVal = 0.5 + (config.pot0 / 1023) * 4;
+    const dotSize = Math.max(4, Math.round(1.5 + (config.pot3 / 1023) * rasterSize * 1.8));
+    const numWalkers = Math.min(6, Math.max(1, Math.floor((config.pot2 / 1023) * 6) + 1));
 
     // Maintain walker count dynamically based on POT 3
     while (this.walkers.length < numWalkers) {
