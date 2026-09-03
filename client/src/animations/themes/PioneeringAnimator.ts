@@ -22,6 +22,10 @@ export class PioneeringAnimator implements ThemeAnimator {
   private footsteps: Footstep[] = [];
   private walkers: Walker[] = [];
 
+  // Cached offscreen mask canvas to avoid recreating DOM elements every frame
+  private maskCanvas: HTMLCanvasElement | null = null;
+  private maskCtx: CanvasRenderingContext2D | null = null;
+
   public draw(
     ctx: CanvasRenderingContext2D,
     _blurCtx: CanvasRenderingContext2D | null,
@@ -34,14 +38,15 @@ export class PioneeringAnimator implements ThemeAnimator {
     ctx.fillStyle = config.backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
-    const rasterSize = Math.max(5, Math.round(2 + (config.pot0 / 1023) * 12));
+    // Sized with a cleaner minimum spacing (min 8 -> gap min 16px) for distinct halftone dots
+    const rasterSize = Math.max(8, Math.round(5 + (config.pot0 / 1023) * 14));
     const speedVal = 0.5 + (config.pot1 / 1023) * 4;
-    const dotSize = Math.max(4, Math.round(1 + (config.pot2 / 1023) * rasterSize * 2));
+    const dotSize = Math.max(4, Math.round(1.5 + (config.pot2 / 1023) * rasterSize * 1.8));
     const numWalkers = Math.min(6, Math.max(1, Math.floor((config.pot3 / 1023) * 6) + 1));
 
     // Maintain walker count dynamically based on POT 3
     while (this.walkers.length < numWalkers) {
-      const newId = (this.walkers.length > 0 ? Math.max(...this.walkers.map(w => w.id)) : 0) + 1;
+      const newId = (this.walkers.length > 0 ? Math.max(...this.walkers.map((w) => w.id)) : 0) + 1;
       this.walkers.push({
         id: newId,
         pathX: width * 0.15 + Math.random() * width * 0.7,
@@ -98,28 +103,48 @@ export class PioneeringAnimator implements ThemeAnimator {
       }
     }
 
-    // Age and cull footsteps dynamically
+    // Age and cull footsteps dynamically (remove fully faded footsteps)
     for (const f of this.footsteps) {
       f.age += dt * speedVal;
     }
+    this.footsteps = this.footsteps.filter((f) => f.age < 8000);
     const maxFootsteps = 30 * numWalkers;
     while (this.footsteps.length > maxFootsteps) {
       this.footsteps.shift();
     }
 
-    // Draw halftone raster background
+    // Halftone raster geometry
     const gap = rasterSize * 2;
     const cols = Math.ceil(width / gap) + 1;
     const rows = Math.ceil(height / gap) + 1;
 
-    // Create a temporary canvas to build the footstep mask
-    const maskCanvas = document.createElement('canvas');
-    maskCanvas.width = width;
-    maskCanvas.height = height;
-    const maskCtx = maskCanvas.getContext('2d')!;
+    // Use a quarter-resolution mask (0.25x scale).
+    // In 4K (2160x3840), this is only 540x960 (~0.5M px instead of 8.3M px).
+    // Reading 0.5M px takes ~0.2ms vs ~30-50ms for 4K.
+    const maskScale = 0.25;
+    const maskWidth = Math.max(1, Math.floor(width * maskScale));
+    const maskHeight = Math.max(1, Math.floor(height * maskScale));
+
+    if (!this.maskCanvas) {
+      this.maskCanvas = document.createElement('canvas');
+      this.maskCanvas.width = maskWidth;
+      this.maskCanvas.height = maskHeight;
+      this.maskCtx = this.maskCanvas.getContext('2d');
+    } else if (this.maskCanvas.width !== maskWidth || this.maskCanvas.height !== maskHeight) {
+      this.maskCanvas.width = maskWidth;
+      this.maskCanvas.height = maskHeight;
+    }
+
+    if (!this.maskCtx) return;
+
+    const maskCtx = this.maskCtx;
+    maskCtx.clearRect(0, 0, maskWidth, maskHeight);
     maskCtx.fillStyle = '#000000';
 
-    // Draw footprint silhouettes on the mask
+    // Draw footprint silhouettes on the downscaled mask
+    maskCtx.save();
+    maskCtx.scale(maskScale, maskScale);
+
     for (const step of this.footsteps) {
       const fadeIn = Math.min(1, step.age / 300);
       const fadeOut = Math.max(0, 1 - step.age / 8000);
@@ -134,31 +159,38 @@ export class PioneeringAnimator implements ThemeAnimator {
       maskCtx.restore();
     }
 
-    // Now render as halftone dots
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-    const maskData = maskCtx.getImageData(0, 0, width, height).data;
+    maskCtx.restore();
 
+    // Sample downscaled mask data (fast 0.5M px read)
+    const maskData = maskCtx.getImageData(0, 0, maskWidth, maskHeight).data;
+
+    // Render halftone dots in a SINGLE batched path & fill call.
+    // Combining subpaths into one fill() reduces 30,000+ individual fill() calls to 1.
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.beginPath();
+
+    const stepX = gap * maskScale;
     for (let r = 0; r < rows; r++) {
+      const cy = r * gap;
+      const py = Math.min(maskHeight - 1, Math.max(0, Math.floor(cy * maskScale)));
+      const rowOffset = py * maskWidth;
+
       for (let c = 0; c < cols; c++) {
         const cx = c * gap;
-        const cy = r * gap;
-
-        // Sample mask at this position
-        const px = Math.min(width - 1, Math.max(0, Math.round(cx)));
-        const py = Math.min(height - 1, Math.max(0, Math.round(cy)));
-        const idx = (py * width + px) * 4;
-        const maskAlpha = maskData[idx + 3] / 255;
+        const px = Math.min(maskWidth - 1, Math.max(0, Math.floor(c * stepX)));
+        const maskAlpha = maskData[(rowOffset + px) * 4 + 3] / 255;
 
         // Dot size scales with mask darkness
         const radius = dotSize * (0.15 + maskAlpha * 0.85);
 
         if (radius > 0.3) {
-          ctx.beginPath();
+          ctx.moveTo(cx + radius, cy);
           ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-          ctx.fill();
         }
       }
     }
+
+    ctx.fill();
   }
 
   private drawFootprintShape(ctx: CanvasRenderingContext2D, isLeft: boolean, scale: number): void {
@@ -169,14 +201,11 @@ export class PioneeringAnimator implements ThemeAnimator {
 
     // Heel (ellipse)
     ctx.ellipse(0, 20 * s, 14 * s, 18 * s, 0, 0, Math.PI * 2);
-    ctx.fill();
 
     // Ball of foot (wider ellipse)
-    ctx.beginPath();
     ctx.ellipse(2 * mirror * s, -18 * s, 20 * s, 15 * s, 0.1 * mirror, 0, Math.PI * 2);
-    ctx.fill();
 
-    // Toes
+    // Toes (combined subpaths)
     const toePositions = [
       { x: -10 * mirror, y: -38, r: 6 },
       { x: -2 * mirror, y: -42, r: 6.5 },
@@ -186,9 +215,10 @@ export class PioneeringAnimator implements ThemeAnimator {
     ];
 
     for (const toe of toePositions) {
-      ctx.beginPath();
+      ctx.moveTo(toe.x * s + toe.r * s, toe.y * s);
       ctx.arc(toe.x * s, toe.y * s, toe.r * s, 0, Math.PI * 2);
-      ctx.fill();
     }
+
+    ctx.fill();
   }
 }
