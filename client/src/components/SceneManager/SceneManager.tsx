@@ -13,8 +13,31 @@ import './SceneManager.css';
 
 export function SceneManager() {
   const currentScene = useAppStore((state) => state.currentScene);
+  const previousScene = useAppStore((state) => state.previousScene);
   const introRunId = useAppStore((state) => state.introRunId);
-  const transitionConfig = SCENE_TRANSITIONS[currentScene] || DEFAULT_TRANSITION;
+
+  // Context-aware transition config: returning from theme to home should have a soft,
+  // clearly visible fade-in (0.55s with a smooth curve) starting immediately at t=0.
+  const transitionConfig = (() => {
+    if (currentScene === 'home' && previousScene === 'theme') {
+      return {
+        type: 'fade' as const,
+        duration: 0.55,
+        ease: [0.25, 0.1, 0.25, 1], // Smooth standard ease for a noticeable, gentle fade
+      };
+    }
+    if (currentScene === 'theme' && previousScene === 'home') {
+      return {
+        type: 'slide-up' as const,
+        duration: 0.4,
+        ease: [0.16, 1, 0.3, 1],
+      };
+    }
+    return {
+      ...(SCENE_TRANSITIONS[currentScene] || DEFAULT_TRANSITION),
+      ease: [0.16, 1, 0.3, 1],
+    };
+  })();
 
   const renderScene = () => {
     switch (currentScene) {
@@ -68,7 +91,10 @@ export function SceneManager() {
 
   return (
     <div className="scene-manager">
-      <AnimatePresence mode="wait">
+      {/* Omitting mode="wait" allows simultaneous cross-fade transitions,
+          so the incoming home scene mounts and fades in immediately at t=0
+          instead of waiting for the old scene to finish exiting. */}
+      <AnimatePresence>
         <motion.div
           key={currentScene}
           initial="initial"
@@ -77,7 +103,7 @@ export function SceneManager() {
           variants={variants}
           transition={{
             duration: transitionConfig.duration,
-            ease: [0.16, 1, 0.3, 1], // Custom expo ease-out from prototype
+            ease: transitionConfig.ease,
           }}
           className="scene-wrapper"
         >
