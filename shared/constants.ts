@@ -65,7 +65,7 @@ export type ProgrammerKey = (typeof PROGRAMMER_KEYS)[number];
 // Each card represents a programmer and can have multiple static UIDs (primary + backup tag).
 export const PROGRAMMER_UIDS = {
   mcnulty: ['048E4CA18C2681', '048B45A18C2681'],
-  jennings: ['042D36A18C2681', '048B3FA18C2681'],
+  jennings: ['04CC15A18C2681', '048B3FA18C2681'],
   snyder: ['049F88A18C2681', '04C15DA18C2681'],
   wescoff: ['04CF8DA18C2681', '045D53A18C2681'],
   bilas: ['04367FA18C2681', '04E21BA18C2681'],

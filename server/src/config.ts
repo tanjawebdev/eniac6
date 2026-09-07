@@ -24,12 +24,12 @@ export const config = {
    * (ignored in mock mode)
    */
   nfcPorts: [
-    'COM13',  // 
-    'COM9',  // stimmt
-    'COM8', // 
-    'COM10', // stimmt
-    'COM12',  // stimmt
-    'COM4',  // 
+    'COM13',
+    'COM9',
+    'COM8',
+    'COM10',
+    'COM12',
+    'COM4',
   ],
 
   /** Baud rate for all serial connections */
