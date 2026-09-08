@@ -25,20 +25,27 @@ export function ThemeScene() {
     }
   }, [bananas, selectedTheme, goHome]);
 
-  // Synchronize the selected programmer with the banana plugs connected to this theme
+  // Synchronize the selected programmer with the banana plugs connected to this theme.
+  // Only fall back to a socket's programmer when the currently selected programmer
+  // is no longer plugged into this theme (e.g. after a disconnect). This prevents
+  // the sync from overriding the latest connection with a stale socket0 preference.
   useEffect(() => {
     if (selectedTheme) {
       const tState = bananas[selectedTheme];
       if (tState) {
-        const activeProgKey = tState.socket0 || tState.socket1;
-        if (activeProgKey) {
-          const selectProgrammer = useAppStore.getState().selectProgrammer;
-          const setActiveColor = useAppStore.getState().setActiveColor;
-          const currentProgKey = useAppStore.getState().selectedProgrammer;
+        const currentProgKey = useAppStore.getState().selectedProgrammer;
+        const currentIsStillPlugged =
+          currentProgKey !== null &&
+          (tState.socket0 === currentProgKey || tState.socket1 === currentProgKey);
 
-          if (currentProgKey !== activeProgKey) {
-            selectProgrammer(activeProgKey);
-            const prog = PROGRAMMERS[activeProgKey];
+        if (!currentIsStillPlugged) {
+          // Current selection is gone — fall back to whichever socket is still plugged in
+          const fallbackProgKey = tState.socket0 || tState.socket1;
+          if (fallbackProgKey) {
+            const selectProgrammer = useAppStore.getState().selectProgrammer;
+            const setActiveColor = useAppStore.getState().setActiveColor;
+            selectProgrammer(fallbackProgKey);
+            const prog = PROGRAMMERS[fallbackProgKey];
             if (prog) {
               setActiveColor(prog.color);
             }
