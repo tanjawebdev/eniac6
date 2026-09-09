@@ -36,7 +36,7 @@ export const INTRO_STEPS = [
     id: 'insert', label: 'Choose a woman', eyebrow: 'Your turn',
     title: 'One punched card.\nOne woman’s story.',
     body: 'Each punched card represents the woman named on it. Choose a card and insert it into a slot in the machine.',
-    note: 'Start with any woman. There is no fixed order.',
+    note: 'Choose any card. There is no fixed order.',
     duration: 13000,
   },
   {
