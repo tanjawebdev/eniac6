@@ -81,10 +81,12 @@ export const useAppStore = create<AppStoreState>((set) => ({
       currentScene: 'home',
       selectedTheme: null,
       activeColor: DEFAULT_ACTIVE_COLOR,
-      // Preserve cardsVisible when coming from theme so cards stay in place during
-      // the theme→home slide-down transition. Only reset it when coming from elsewhere
-      // (e.g. intro, reset) so the staggered entrance still plays on a fresh load.
-      cardsVisible: state.currentScene === 'theme' ? state.cardsVisible : false,
+      // Preserve cardsVisible when coming from theme or already on home so cards stay in place.
+      // Only reset it when coming from elsewhere (e.g. intro, reset) so the staggered entrance still plays on a fresh load.
+      cardsVisible:
+        state.currentScene === 'theme' || state.currentScene === 'home'
+          ? state.cardsVisible
+          : false,
     })),
 
   showIntro: () =>
