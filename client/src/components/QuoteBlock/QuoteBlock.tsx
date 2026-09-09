@@ -44,12 +44,20 @@ export function QuoteBlock() {
             <span
               key={idx}
               className="quote-word"
-              style={{ animationDelay: `${idx * 28 + 150}ms` }}
+              style={{ animationDelay: `${idx * 70 + 150}ms` }}
             >
               {word}{' '}
             </span>
           ))}
         </p>
+
+        {/* ONLY for fran and Recognition: i want to insert the image of the award */}
+        {selectedProgrammer === 'bilas' && selectedTheme === 'recognition' && (
+          <div className="quote-block-image">
+            <img src="/famouse-image.jpg" alt="Famouse image of Fran" />
+          </div>
+        )}
+
         <span className="quote-block-speaker">- {quoteEntry.speaker}</span>
       </div>
 
