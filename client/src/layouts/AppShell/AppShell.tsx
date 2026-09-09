@@ -8,9 +8,12 @@ import { Hud } from '../../components/Hud/Hud';
 import { DebugOverlay } from '../../components/DebugOverlay/DebugOverlay';
 import { ProgrammerCardsOverlay } from '../../components/ProgrammerCardsOverlay/ProgrammerCardsOverlay';
 import { PROGRAMMERS } from '../../data/programmers';
+import { useSoundManager } from '../../hooks/useSoundManager';
 import './AppShell.css';
 
 export function AppShell() {
+  // Sound system — only active on the main installation UI, not on /debug
+  useSoundManager();
   const debugVisible = useAppStore((state) => state.debugVisible);
   const devScale = useAppStore((state) => state.devScale);
   const activeColor = useAppStore((state) => state.activeColor);

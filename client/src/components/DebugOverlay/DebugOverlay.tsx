@@ -141,11 +141,13 @@ export function DebugOverlay({ standalone = false }: DebugOverlayProps) {
       const reader = hardware.nfc[slotIndex];
       const programmerKey = reader.present ? UID_TO_PROGRAMMER[reader.uid] : null;
 
+      // Always send connected:true when a slot is selected — mirrors real hardware which
+      // sends connected:true+programmer:null when a cable is plugged in but the card slot is empty.
       wsService.sendEvent({
         type: 'banana',
         theme: themeId,
         socket,
-        connected: programmerKey !== null,
+        connected: true,
         programmer: programmerKey,
       });
     }

@@ -11,6 +11,8 @@ export class WebSocketService {
   private maxReconnectDelay = 10000;
   private isIntentionalDisconnect = false;
   private lastPotLatencyLogTimes = new Array(16).fill(0);
+  /** Listeners that receive every raw HardwareEvent before store dispatch. */
+  private hardwareEventListeners: Set<(event: HardwareEvent) => void> = new Set();
 
   private constructor() {}
 
@@ -48,6 +50,8 @@ export class WebSocketService {
         switch (message.type) {
           case 'hardware':
             this.logBrowserLatency(message);
+            // Notify raw listeners first (e.g. sound manager) before store dispatch
+            this.hardwareEventListeners.forEach((cb) => cb(message.event));
             useHardwareStore.getState().updateFromEvent(message.event);
             break;
           case 'state':
@@ -90,6 +94,15 @@ export class WebSocketService {
     } else {
       console.warn('[WS] Cannot send event, socket is not open');
     }
+  }
+
+  /**
+   * Subscribe to raw hardware events before they are applied to the store.
+   * Returns an unsubscribe function.
+   */
+  public addHardwareEventListener(cb: (event: HardwareEvent) => void): () => void {
+    this.hardwareEventListeners.add(cb);
+    return () => this.hardwareEventListeners.delete(cb);
   }
 
   public disconnect(): void {

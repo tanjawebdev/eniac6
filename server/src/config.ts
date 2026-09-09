@@ -8,7 +8,7 @@ import { WS_PORT, HTTP_PORT, SERIAL_BAUD_RATE } from '../../shared/constants.js'
 
 export const config = {
   /** When true, uses MockService instead of SerialService */
-  mockMode: false,
+  mockMode: true,
 
   /**
    * Serial port for the main Arduino Mega.
