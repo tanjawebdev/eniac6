@@ -88,7 +88,7 @@
 
 /* ---- Quote Area ---- */
 .quote-block-quote {
-  padding: 130px 60px 130px 60px;
+  padding: 130px 60px 60px 60px;
   position: relative;
   border-bottom: 3px solid rgba(255, 255, 255, 1);
 }
@@ -113,6 +113,17 @@
   color: #ffffff;
   margin: 0;
   padding-left: 160px;
+}
+
+.quote-block-speaker {
+  font-family: var(--font-sans);
+  font-size: 48px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 1);
+  display: block;
+  padding-left: 160px;
+  text-align: right;
+  margin-top: 100px;
 }
 
 .quote-block-text .quote-word {

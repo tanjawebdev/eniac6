@@ -50,6 +50,7 @@ export function QuoteBlock() {
             </span>
           ))}
         </p>
+        <span className="quote-block-speaker">- {quoteEntry.speaker}</span>
       </div>
 
       {/* Context section */}
