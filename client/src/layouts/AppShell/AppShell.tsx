@@ -34,7 +34,7 @@ export function AppShell() {
   // Any scene departure resets cardsVisible=false via the store actions.
   useEffect(() => {
     if (currentScene !== 'home') return;
-    const timer = window.setTimeout(() => setCardsVisible(true), 1100);
+    const timer = window.setTimeout(() => setCardsVisible(true), 550);
     return () => window.clearTimeout(timer);
   }, [currentScene, setCardsVisible]);
 
